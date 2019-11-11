@@ -1,0 +1,10 @@
+<Project>
+  
+  <PropertyGroup>
+    <PackageTags>Ajustee Configuration Keys Client .Net</PackageTags>
+    <PackageProjectUrl>https://ajustee.atlassian.net/wiki/spaces/DEVELOPMEN/pages/68943875/.NET+Client+library</PackageProjectUrl>
+    <PackageIconUrl>https://avatars3.githubusercontent.com/u/49758154?s=128</PackageIconUrl>
+    <PackageIcon>AjusteeIcon.png</PackageIcon>
+  </PropertyGroup>
+
+</Project>

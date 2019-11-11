@@ -1,0 +1,71 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\Solution Items\CC.Package.props" />
+
+  <PropertyGroup>
+    <Title>Ajustee Client</Title>
+    <Description>Ajustee client for .NET</Description>
+    <VersionPrefix>0.3.0</VersionPrefix>
+    <VersionSuffix>beta01</VersionSuffix>
+    <AssemblyName>Ajustee.Client</AssemblyName>
+    <TargetFrameworks>netcoreapp3.0;net461;net46;net45;net40;netstandard2.1;netstandard2.0;netstandard1.3</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <JsonMode Condition="'$(TargetFramework)' == 'netcoreapp3.0' OR '$(TargetFramework)' == 'net461' OR '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netstandard2.1'">SJSON</JsonMode>
+    <JsonMode Condition="'$(TargetFramework)' == 'netstandard1.3' OR '$(TargetFramework)' == 'net40' OR '$(TargetFramework)' == 'net45' OR '$(TargetFramework)' == 'net46'">NJSON</JsonMode>
+    <RequestMode Condition="'$(TargetFramework)' == 'net40' OR '$(TargetFramework)' == 'net45' OR '$(TargetFramework)' == 'net46'">RWEB</RequestMode>
+    <RequestMode Condition="'$(RequestMode)' == ''">RHTTP</RequestMode>
+    <AsyncMode Condition="'$(TargetFramework)' == 'net40'">False</AsyncMode>
+    <AsyncMode Condition="'$(AsyncMode)' == ''">True</AsyncMode>
+    <DefineConstants>$(DefineConstants);$(JsonMode);$(RequestMode)</DefineConstants>
+    <DefineConstants Condition="'$(AsyncMode)' == 'True'">$(DefineConstants);ASYNC</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- SJSON means System JSON -->
+    <PackageReference Condition="'$(JsonMode)' == 'SJSON' AND '$(TargetFramework)' != 'netcoreapp3.0'" Include="System.Text.Json" Version="4.6.0" />
+    <!-- NJSON means Newtonsoft JSON -->
+    <PackageReference Condition="'$(JsonMode)' == 'NJSON'" Include="Newtonsoft.Json" Version="12.0.2" />
+  </ItemGroup>
+
+  <!-- Ignore following items group from compilation if current json mode is not SJSON  -->
+  <ItemGroup Condition="'$(JsonMode)' != 'SJSON'">
+    <Compile Remove="Internal\Serialization\SystemJsonSerializer.cs" />
+    <Compile Remove="Internal\Serialization\JsonConfigValueConverter.cs" />
+    <None Include="Internal\Serialization\SystemJsonSerializer.cs" />
+    <None Include="Internal\Serialization\JsonConfigValueConverter.cs" />
+  </ItemGroup>
+
+  <!-- Ignore following items group from compilation if current json mode is not NJSON  -->
+  <ItemGroup Condition="'$(JsonMode)' != 'NJSON'">
+    <Compile Remove="Internal\Serialization\NewtonsoftJsonSerializer.cs" />
+    <None Include="Internal\Serialization\NewtonsoftJsonSerializer.cs" />
+  </ItemGroup>
+
+  <!-- Ignore following items group from compilation if should be used Web Request -->
+  <ItemGroup Condition="'$(RequestMode)' == 'RHTTP'">
+    <Compile Remove="Internal\Request\ApiWebRequest.cs" />
+    <None Include="Internal\Request\ApiWebRequest.cs" />
+  </ItemGroup>
+
+  <!-- Ignore following items group from compilation if should be used Http Request -->
+  <ItemGroup Condition="'$(RequestMode)' == 'RWEB'">
+    <Compile Remove="Internal\Request\ApiHttpRequest.cs" />
+    <None Include="Internal\Request\ApiHttpRequest.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="Resources\AjusteeIcon.png" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <Import Project="..\Solution Items\CC.Package.targets" />
+
+</Project>
