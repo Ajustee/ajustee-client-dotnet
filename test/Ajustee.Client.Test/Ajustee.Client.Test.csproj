@@ -29,7 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DotNetStdLib\DotNetStdLib.csproj" />
+    <ProjectReference Include="..\..\src\Ajustee.Client\Ajustee.Client.csproj" />
   </ItemGroup>
 
 </Project>

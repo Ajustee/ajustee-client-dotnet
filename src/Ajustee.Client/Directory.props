@@ -7,4 +7,10 @@
     <PackageIcon>AjusteeIcon.png</PackageIcon>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <GenerateDocumentationFile Condition="'$(Configuration)' == 'Release'">true</GenerateDocumentationFile>
+    <AssemblyOriginatorKeyFile>..\..\ajustee.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+
 </Project>

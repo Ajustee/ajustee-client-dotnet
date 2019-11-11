@@ -1,7 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\Solution Items\CC.Package.props" />
-
   <PropertyGroup>
     <Title>Ajustee Client</Title>
     <Description>Ajustee client for .NET</Description>
@@ -65,7 +63,5 @@
   <ItemGroup>
     <None Include="Resources\AjusteeIcon.png" Pack="true" PackagePath="" />
   </ItemGroup>
-
-  <Import Project="..\Solution Items\CC.Package.targets" />
 
 </Project>

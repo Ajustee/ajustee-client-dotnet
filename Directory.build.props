@@ -9,10 +9,4 @@
     <RootNamespace>Ajustee</RootNamespace>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <GenerateDocumentationFile Condition="'$(Configuration)' == 'Release'">true</GenerateDocumentationFile>
-    <AssemblyOriginatorKeyFile>..\Solution Items\cc.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly>true</SignAssembly>
-  </PropertyGroup>
-
 </Project>
