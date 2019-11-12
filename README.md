@@ -1,5 +1,4 @@
-# ![Logo](https://avatars2.githubusercontent.com/u/49758154?s=100&v=4) Ajustee.Client
-# Ajustee.Client - the .NET client for Ajustee
+# ![Logo](https://avatars2.githubusercontent.com/u/49758154?s=100&v=4) Ajustee.Client - the .NET client for Ajustee
 
 [![stable](https://img.shields.io/nuget/v/Ajustee.Client.svg?label=stable)](https://www.nuget.org/packages/Ajustee.Client/)
 
