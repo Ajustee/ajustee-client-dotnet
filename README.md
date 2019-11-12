@@ -1,6 +1,6 @@
 # Ajustee.Client - the .NET client for Ajustee
 
-[![stable](https://img.shields.io/ajustee.client/v/Ajustee.Client.svg?label=stable)](https://www.nuget.org/packages/Ajustee.Client/)
+[![stable](https://img.shields.io/nuget/v/Ajustee.Client.svg?label=stable)](https://www.nuget.org/packages/Ajustee.Client/)
 
 ## What is Ajustee.Client?
 
