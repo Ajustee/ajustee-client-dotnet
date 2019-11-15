@@ -20,13 +20,17 @@ namespace Ajustee
         private static HttpRequestMessage CreateRequestMessage(AjusteeConnectionSettings settings, string path, IDictionary<string, string> properties)
         {
             // Creates get http request with api url and specified configuration path.
-            var _message = new HttpRequestMessage(HttpMethod.Get, string.Format(RequestHelper.ConfigurationPathUrlTemplate, settings.ApiUrl, path ?? settings.DefaultPath));
+            var _message = new HttpRequestMessage(HttpMethod.Get, string.Format(Helper.ConfigurationPathUrlTemplate, settings.ApiUrl, path ?? settings.DefaultPath));
 
             // Adds header to specify customer's application id.
-            _message.Headers.Add(RequestHelper.AppicationHeaderName, settings.ApplicationId);
+            _message.Headers.Add(Helper.AppicationHeaderName, settings.ApplicationId);
+
+            // Validate properties.
+            Helper.ValidateProperties(properties);
+            Helper.ValidateProperties(settings.DefaultProperties);
 
             // Adds the specified properties to the request message.
-            foreach (var _propertyEntry in RequestHelper.ValidateAndGetProperties(properties ?? settings.DefaultProperties))
+            foreach (var _propertyEntry in Helper.GetMergedProperties(properties, settings.DefaultProperties))
                 _message.Headers.Add(_propertyEntry.Key, _propertyEntry.Value);
 
             return _message;

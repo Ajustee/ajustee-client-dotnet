@@ -29,16 +29,20 @@ namespace Ajustee
         private static WebRequest CreateRequest(AjusteeConnectionSettings settings, string path, IDictionary<string, string> properties)
         {
             // Creates get http request with api url and specified configuration path.
-            var _request = WebRequest.Create(string.Format(RequestHelper.ConfigurationPathUrlTemplate, settings.ApiUrl, path ?? settings.DefaultPath));
+            var _request = WebRequest.Create(string.Format(Helper.ConfigurationPathUrlTemplate, settings.ApiUrl, path ?? settings.DefaultPath));
 
             // Sets method name.
             _request.Method = "GET";
 
             // Adds header to specify customer's application id.
-            _request.Headers.Add(RequestHelper.AppicationHeaderName, settings.ApplicationId);
+            _request.Headers.Add(Helper.AppicationHeaderName, settings.ApplicationId);
+
+            // Validate properties.
+            Helper.ValidateProperties(properties);
+            Helper.ValidateProperties(settings.DefaultProperties);
 
             // Adds the specified properties to the request message.
-            foreach (var _propertyEntry in RequestHelper.ValidateAndGetProperties(properties ?? settings.DefaultProperties))
+            foreach (var _propertyEntry in Helper.GetMergedProperties(properties, settings.DefaultProperties))
                 _request.Headers.Add(_propertyEntry.Key, _propertyEntry.Value);
 
             return _request;
