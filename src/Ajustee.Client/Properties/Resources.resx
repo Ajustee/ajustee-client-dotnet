@@ -132,10 +132,10 @@
   <data name="ERR_HTTP_NOTFOUND" xml:space="preserve">
     <value>Not Found</value>
   </data>
-  <data name="ERR_INVALID_HEADER_NAME" xml:space="preserve">
-    <value>Invalid header name '{0}'.</value>
+  <data name="ERR_INVALID_PROPERTY_NAME" xml:space="preserve">
+    <value>Invalid property name '{0}'.</value>
   </data>
-  <data name="ERR_RESERVER_HEADER_NAME" xml:space="preserve">
-    <value>Reserved header name '{0}', use another header name.</value>
+  <data name="ERR_RESERVER_PROPERTY_NAME" xml:space="preserve">
+    <value>Reserved property name '{0}', use another property name.</value>
   </data>
 </root>

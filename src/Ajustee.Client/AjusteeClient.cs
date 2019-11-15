@@ -70,17 +70,17 @@ namespace Ajustee
             return GetConfigurations(path, null);
         }
 
-        public IEnumerable<ConfigKey> GetConfigurations(IDictionary<string, string> headers)
+        public IEnumerable<ConfigKey> GetConfigurations(IDictionary<string, string> properties)
         {
-            return GetConfigurations(null, headers);
+            return GetConfigurations(null, properties);
         }
 
-        public IEnumerable<ConfigKey> GetConfigurations(string path, IDictionary<string, string> headers)
+        public IEnumerable<ConfigKey> GetConfigurations(string path, IDictionary<string, string> properties)
         {
             using var _requst = ApiRequestFactory.Create();
 
             // Requests and response stream
-            using var _stream = _requst.GetStream(Settings, path, headers);
+            using var _stream = _requst.GetStream(Settings, path, properties);
 
             // Deserialize stream and returns.
             return m_JsonSerializer.Deserialize(_stream);
@@ -97,17 +97,17 @@ namespace Ajustee
             return await GetConfigurationsAsync(path, null, cancellationToken);
         }
 
-        public async System.Threading.Tasks.Task<IEnumerable<ConfigKey>> GetConfigurationsAsync(IDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default)
+        public async System.Threading.Tasks.Task<IEnumerable<ConfigKey>> GetConfigurationsAsync(IDictionary<string, string> properties, System.Threading.CancellationToken cancellationToken = default)
         {
-            return await GetConfigurationsAsync(null, headers, cancellationToken);
+            return await GetConfigurationsAsync(null, properties, cancellationToken);
         }
 
-        public async System.Threading.Tasks.Task<IEnumerable<ConfigKey>> GetConfigurationsAsync(string path, IDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default)
+        public async System.Threading.Tasks.Task<IEnumerable<ConfigKey>> GetConfigurationsAsync(string path, IDictionary<string, string> properties, System.Threading.CancellationToken cancellationToken = default)
         {
             using var _requst = ApiRequestFactory.Create();
 
             // Requests and response stream
-            using var _stream = await _requst.GetStreamAsync(Settings, path, headers);
+            using var _stream = await _requst.GetStreamAsync(Settings, path, properties);
 
             // Deserialize stream and returns.
             return await m_JsonSerializer.DeserializeAsync(_stream);

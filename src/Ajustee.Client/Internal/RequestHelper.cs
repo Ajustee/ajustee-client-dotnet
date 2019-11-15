@@ -14,19 +14,19 @@ namespace Ajustee
 
         #region Public methods region
 
-        public static IEnumerable<KeyValuePair<string, string>> ValidateAndGetHeaders(IDictionary<string, string> parameteres)
+        public static IEnumerable<KeyValuePair<string, string>> ValidateAndGetProperties(IDictionary<string, string> properties)
         {
-            if (parameteres != null)
+            if (properties != null)
             {
-                foreach (var _header in parameteres)
+                foreach (var _property in properties)
                 {
-                    if (string.IsNullOrEmpty(_header.Key))
-                        throw Error.InvalidHeaderName(_header.Key);
+                    if (string.IsNullOrEmpty(_property.Key))
+                        throw Error.InvalidPropertyName(_property.Key);
 
-                    if (string.Equals(AppicationHeaderName, _header.Key, StringComparison.OrdinalIgnoreCase))
-                        throw Error.ReservedHeaderName(_header.Key);
+                    if (string.Equals(AppicationHeaderName, _property.Key, StringComparison.OrdinalIgnoreCase))
+                        throw Error.ReservedPropertyName(_property.Key);
 
-                    yield return _header;
+                    yield return _property;
                 }
             }
         }

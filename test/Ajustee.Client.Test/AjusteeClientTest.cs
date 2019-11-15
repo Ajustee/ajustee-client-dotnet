@@ -17,18 +17,24 @@ namespace Ajustee
     {
         #region Private field region
 
-        private const string APPLICATION_ID = "IUP2fmZaF0l2dLar~5mN91AvYTFbKkFw";
-        private static readonly Uri m_API_URL = new Uri("https://7yrz26nhpe.execute-api.us-west-1.amazonaws.com/dev/configurationKeys");
-        //private const string APPLICATION_ID = "nGN.agafP3fy7HbhEbfpVQqpOD0BQNzg";
-        //private static readonly Uri m_API_URL = new Uri("https://api.beta.ajustee.com/configurationKeys");
+        //private const string APPLICATION_ID = "IUP2fmZaF0l2dLar~5mN91AvYTFbKkFw";
+        //private static readonly Uri m_API_URL = new Uri("https://7yrz26nhpe.execute-api.us-west-1.amazonaws.com/dev/configurationKeys");
+        private const string APPLICATION_ID = "nGN.agafP3fy7HbhEbfpVQqpOD0BQNzg";
+        private static readonly Uri m_API_URL = new Uri("https://api.beta.ajustee.com/configurationKeys");
 
         #endregion
 
         #region Private methods region
 
-        private static AjusteeClient CreateClient()
+        private static AjusteeClient CreateClient(string defaultPath = null, IDictionary<string, string> defaultProperties = null)
         {
-            return new AjusteeClient(new AjusteeConnectionSettings { ApiUrl = m_API_URL, ApplicationId = APPLICATION_ID });
+            return new AjusteeClient(new AjusteeConnectionSettings
+            {
+                ApiUrl = m_API_URL,
+                ApplicationId = APPLICATION_ID,
+                DefaultPath = defaultPath,
+                DefaultProperties = defaultProperties
+            });
         }
 
         #endregion
@@ -71,7 +77,7 @@ namespace Ajustee
 
         [Theory]
         [InlineData("param1", "value1")]
-        public void GetConfigurations_Headers(string paramName, string paramValue)
+        public void GetConfigurations_Properties(string paramName, string paramValue)
         {
             using var _client = CreateClient();
             var _result = _client.GetConfigurations(new Dictionary<string, string> { { paramName, paramValue } });
@@ -88,7 +94,7 @@ namespace Ajustee
         [InlineData("namespace1/key5", "param1", "value1", 1, ConfigKeyType.Date, "2021-10-28")]
         [InlineData("namespace1/key6", "param1", "value1", 1, ConfigKeyType.DateTime, "2021-10-28T04:05:06.000Z")]
         [InlineData("invalid", "param1", "value1", 0, null, null)]
-        public void GetConfigurations_PathHeaders(string path, string paramName, string paramValue, int expectedCount, ConfigKeyType? expectedType, string expectedValue)
+        public void GetConfigurations_PathProperties(string path, string paramName, string paramValue, int expectedCount, ConfigKeyType? expectedType, string expectedValue)
         {
             using var _client = CreateClient();
             var _result = _client.GetConfigurations(path, new Dictionary<string, string> { { paramName, paramValue } });
@@ -96,6 +102,42 @@ namespace Ajustee
             foreach (var _config in _result)
             {
                 Assert.True((_config.Path.StartsWith(path)));
+                if (expectedType != null)
+                {
+                    Assert.True(object.Equals(_config.DataType, expectedType));
+                    Assert.True(object.Equals(_config.Value, expectedValue));
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData("namespace1/key1", 1, ConfigKeyType.Integer, "2")]
+        public void GetConfigurations_DefaultPath(string defaultPath, int expectedCount, ConfigKeyType? expectedType, string expectedValue)
+        {
+            using var _client = CreateClient(defaultPath: defaultPath);
+            var _result = _client.GetConfigurations();
+            Assert.True(object.Equals(expectedCount, _result.Count()));
+            foreach (var _config in _result)
+            {
+                Assert.True((_config.Path.StartsWith(defaultPath)));
+                if (expectedType != null)
+                {
+                    Assert.True(object.Equals(_config.DataType, expectedType));
+                    Assert.True(object.Equals(_config.Value, expectedValue));
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData("namespace1/key1", "param1", "value1", 1, ConfigKeyType.Integer, "3")]
+        public void GetConfigurations_DefaultPathProperties(string defaultPath, string defaultParamName, string defaultParamValue, int expectedCount, ConfigKeyType? expectedType, string expectedValue)
+        {
+            using var _client = CreateClient(defaultPath: defaultPath, defaultProperties: new Dictionary<string, string> { { defaultParamName, defaultParamValue } });
+            var _result = _client.GetConfigurations();
+            Assert.True(defaultPath == "" ? _result.Count() > 0 : expectedCount == _result.Count());
+            foreach (var _config in _result)
+            {
+                Assert.True((_config.Path.StartsWith(defaultPath)));
                 if (expectedType != null)
                 {
                     Assert.True(object.Equals(_config.DataType, expectedType));
@@ -141,7 +183,7 @@ namespace Ajustee
 
         [Theory]
         [InlineData("param1", "value1")]
-        public async Task GetConfigurationsAsync_Headers(string paramName, string paramValue)
+        public async Task GetConfigurationsAsync_Properties(string paramName, string paramValue)
         {
             using var _client = CreateClient();
             var _result = await _client.GetConfigurationsAsync(new Dictionary<string, string> { { paramName, paramValue } });
@@ -158,7 +200,7 @@ namespace Ajustee
         [InlineData("namespace1/key5", "param1", "value1", 1, ConfigKeyType.Date, "2021-10-28")]
         [InlineData("namespace1/key6", "param1", "value1", 1, ConfigKeyType.DateTime, "2021-10-28T04:05:06.000Z")]
         [InlineData("invalid", "param1", "value1", 0, null, null)]
-        public async Task GetConfigurationsAsync_PathHeaders(string path, string paramName, string paramValue, int expectedCount, ConfigKeyType? expectedType, string expectedValue)
+        public async Task GetConfigurationsAsync_PathProperties(string path, string paramName, string paramValue, int expectedCount, ConfigKeyType? expectedType, string expectedValue)
         {
             using var _client = CreateClient();
             var _result = await _client.GetConfigurationsAsync(path, new Dictionary<string, string> { { paramName, paramValue } });
@@ -166,6 +208,42 @@ namespace Ajustee
             foreach (var _config in _result)
             {
                 Assert.True((_config.Path.StartsWith(path)));
+                if (expectedType != null)
+                {
+                    Assert.True(object.Equals(_config.DataType, expectedType));
+                    Assert.True(object.Equals(_config.Value, expectedValue));
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData("namespace1/key1", 1, ConfigKeyType.Integer, "2")]
+        public async Task GetConfigurationsAsync_DefaultPath(string defaultPath, int expectedCount, ConfigKeyType? expectedType, string expectedValue)
+        {
+            using var _client = CreateClient(defaultPath: defaultPath);
+            var _result = await _client.GetConfigurationsAsync();
+            Assert.True(object.Equals(expectedCount, _result.Count()));
+            foreach (var _config in _result)
+            {
+                Assert.True((_config.Path.StartsWith(defaultPath)));
+                if (expectedType != null)
+                {
+                    Assert.True(object.Equals(_config.DataType, expectedType));
+                    Assert.True(object.Equals(_config.Value, expectedValue));
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData("namespace1/key1", "param1", "value1", 1, ConfigKeyType.Integer, "3")]
+        public async Task GetConfigurationsAsync_DefaultPathProperties(string defaultPath, string defaultParamName, string defaultParamValue, int expectedCount, ConfigKeyType? expectedType, string expectedValue)
+        {
+            using var _client = CreateClient(defaultPath: defaultPath, defaultProperties: new Dictionary<string, string> { { defaultParamName, defaultParamValue } });
+            var _result = await _client.GetConfigurationsAsync();
+            Assert.True(defaultPath == "" ? _result.Count() > 0 : expectedCount == _result.Count());
+            foreach (var _config in _result)
+            {
+                Assert.True((_config.Path.StartsWith(defaultPath)));
                 if (expectedType != null)
                 {
                     Assert.True(object.Equals(_config.DataType, expectedType));

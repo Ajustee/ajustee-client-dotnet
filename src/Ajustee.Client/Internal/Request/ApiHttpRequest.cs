@@ -17,7 +17,7 @@ namespace Ajustee
 
         #region Private methods region
 
-        private static HttpRequestMessage CreateRequestMessage(AjusteeConnectionSettings settings, string path, IDictionary<string, string> headers)
+        private static HttpRequestMessage CreateRequestMessage(AjusteeConnectionSettings settings, string path, IDictionary<string, string> properties)
         {
             // Creates get http request with api url and specified configuration path.
             var _message = new HttpRequestMessage(HttpMethod.Get, string.Format(RequestHelper.ConfigurationPathUrlTemplate, settings.ApiUrl, path ?? settings.DefaultPath));
@@ -25,9 +25,9 @@ namespace Ajustee
             // Adds header to specify customer's application id.
             _message.Headers.Add(RequestHelper.AppicationHeaderName, settings.ApplicationId);
 
-            // Adds the specified headers to the request message.
-            foreach (var _headerEntry in RequestHelper.ValidateAndGetHeaders(headers))
-                _message.Headers.Add(_headerEntry.Key, _headerEntry.Value);
+            // Adds the specified properties to the request message.
+            foreach (var _propertyEntry in RequestHelper.ValidateAndGetProperties(properties ?? settings.DefaultProperties))
+                _message.Headers.Add(_propertyEntry.Key, _propertyEntry.Value);
 
             return _message;
         }
@@ -36,25 +36,25 @@ namespace Ajustee
 
         #region Public methods region
 
-        public Stream GetStream(AjusteeConnectionSettings settings, string path, IDictionary<string, string> headers)
+        public Stream GetStream(AjusteeConnectionSettings settings, string path, IDictionary<string, string> properties)
         {
             // Initializes http client istance.
             m_Client = new HttpClient();
 
             // Create message and send to a server.
-            m_Response = m_Client.SendAsync(CreateRequestMessage(settings, path, headers)).Result;
+            m_Response = m_Client.SendAsync(CreateRequestMessage(settings, path, properties)).Result;
 
             // Returns streamed payload of the configurations.
             return m_Response.Content.ReadAsStreamAsync().Result;
         }
 
-        public async Task<Stream> GetStreamAsync(AjusteeConnectionSettings settings, string path, IDictionary<string, string> headers, CancellationToken cancellationToken = default)
+        public async Task<Stream> GetStreamAsync(AjusteeConnectionSettings settings, string path, IDictionary<string, string> properties, CancellationToken cancellationToken = default)
         {
             // Initializes http client istance.
             m_Client = new HttpClient();
 
             // Create message and send to a server.
-            m_Response = await m_Client.SendAsync(CreateRequestMessage(settings, path, headers));
+            m_Response = await m_Client.SendAsync(CreateRequestMessage(settings, path, properties));
 
             // Returns streamed payload of the configurations.
             return await m_Response.Content.ReadAsStreamAsync();
