@@ -13,7 +13,7 @@ using InlineData = NUnit.Framework.TestCaseAttribute;
 
 namespace Ajustee
 {
-    public class AjusteeClientTest
+    public class GetConfigurationsTest
     {
         #region Private field region
 

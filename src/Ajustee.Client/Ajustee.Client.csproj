@@ -6,6 +6,7 @@
     <VersionPrefix>0.3.4</VersionPrefix>
     <VersionSuffix>beta01</VersionSuffix>
     <AssemblyName>Ajustee.Client</AssemblyName>
+    <!--<TargetFramework>net40</TargetFramework>-->
     <TargetFrameworks>netcoreapp3.0;net461;net46;net45;net40;netstandard2.1;netstandard2.0;netstandard1.3</TargetFrameworks>
   </PropertyGroup>
 
