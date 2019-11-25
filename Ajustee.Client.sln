@@ -7,6 +7,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ajustee.Client", "src\Ajust
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ajustee.Client.Test", "test\Ajustee.Client.Test\Ajustee.Client.Test.csproj", "{577427DA-6DC4-4434-AF17-672669C9955A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{BA89D455-BFE5-4D81-B8A8-A27E7B444913}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketEmulateTools", "test\WebSocketEmulateTools\WebSocketEmulateTools.csproj", "{3C53EF32-FFCB-4A3A-82EC-22BFE36AC869}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,9 +25,17 @@ Global
 		{577427DA-6DC4-4434-AF17-672669C9955A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{577427DA-6DC4-4434-AF17-672669C9955A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{577427DA-6DC4-4434-AF17-672669C9955A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C53EF32-FFCB-4A3A-82EC-22BFE36AC869}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C53EF32-FFCB-4A3A-82EC-22BFE36AC869}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C53EF32-FFCB-4A3A-82EC-22BFE36AC869}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C53EF32-FFCB-4A3A-82EC-22BFE36AC869}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{577427DA-6DC4-4434-AF17-672669C9955A} = {BA89D455-BFE5-4D81-B8A8-A27E7B444913}
+		{3C53EF32-FFCB-4A3A-82EC-22BFE36AC869} = {BA89D455-BFE5-4D81-B8A8-A27E7B444913}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DAEE632B-A726-449E-8A32-FFE220887BA9}
