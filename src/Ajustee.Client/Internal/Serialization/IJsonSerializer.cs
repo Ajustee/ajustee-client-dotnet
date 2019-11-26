@@ -7,6 +7,8 @@ namespace Ajustee
     {
         #region Methods region
 
+        string Serialize(object obj);
+
         IEnumerable<ConfigKey> Deserialize(Stream jsonStream);
 
 #if ASYNC

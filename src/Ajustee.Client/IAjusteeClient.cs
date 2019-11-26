@@ -29,6 +29,12 @@ namespace Ajustee
         Task<IEnumerable<ConfigKey>> GetConfigurationsAsync(string path, IDictionary<string, string> properties, CancellationToken cancellationToken = default);
 #endif
 
+#if SUBSCRIBE
+        void Subscribe(string path);
+
+        void Subscribe(string path, IDictionary<string, string> properties);
+#endif
+
         #endregion
     }
 }

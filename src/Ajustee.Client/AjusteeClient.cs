@@ -3,11 +3,22 @@ using System.Collections.Generic;
 
 namespace Ajustee
 {
-    public class AjusteeClient : IAjusteeClient, IDisposable
+    public partial class AjusteeClient : IAjusteeClient, IDisposable
     {
         #region Private fields region
 
         private static readonly IJsonSerializer m_JsonSerializer;
+
+        private Action m_InvokeOnDispose;
+
+        #endregion
+
+        #region Private methods region
+
+        private void InvokeOnDispose(Action callback)
+        {
+            m_InvokeOnDispose += callback;
+        }
 
         #endregion
 
@@ -45,7 +56,9 @@ namespace Ajustee
         #region Protected methods region
 
         protected virtual void Dispose(bool disposing)
-        { }
+        {
+            m_InvokeOnDispose?.Invoke();
+        }
 
         #endregion
 

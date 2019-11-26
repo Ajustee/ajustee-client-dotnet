@@ -30,6 +30,11 @@ namespace Ajustee
 
         #region Public methods region
 
+        public string Serialize(object obj)
+        {
+            return JsonSerializer.Serialize(obj, obj.GetType(), m_JsonOptions);
+        }
+
         public IEnumerable<ConfigKey> Deserialize(Stream jsonStream)
         {
             using var _jsonReader = new StreamReader(jsonStream, Encoding.UTF8);

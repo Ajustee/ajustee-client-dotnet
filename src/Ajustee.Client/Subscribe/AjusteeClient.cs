@@ -1,0 +1,67 @@
+﻿using System.Collections.Generic;
+
+namespace Ajustee
+{
+    public partial class AjusteeClient
+    {
+        #region Private fields region
+
+        private Subscriber m_Subscriber;
+        private readonly object m_SubscriberSyncRoot = new object();
+
+        #endregion
+
+        #region Private methods region
+
+        private Subscriber EnsureSubscriber()
+        {
+            if (m_Subscriber == null)
+            {
+                lock (m_SubscriberSyncRoot)
+                {
+                    if (m_Subscriber == null)
+                    {
+                        // Creates a new instance of the subscriber.
+                        m_Subscriber = new Subscriber(Settings);
+
+                        // Handle the dispose of the subscriber.
+                        InvokeOnDispose(() =>
+                        {
+                            if (m_Subscriber != null)
+                            {
+                                m_Subscriber.Dispose();
+                                m_Subscriber = null;
+                            }
+                        });
+                    }
+                }
+            }
+            return m_Subscriber;
+        }
+
+        #endregion
+
+        #region Public methods region
+
+        public void Subscribe(string path)
+        {
+            Subscribe(path, null);
+        }
+
+        public void Subscribe(string path, IDictionary<string, string> properties)
+        {
+            EnsureSubscriber().Subscribe(path, properties);
+        }
+
+        #endregion
+
+        #region Public events region
+
+        /// <summary>
+        /// Occurs when configuration key has been changed.
+        /// </summary>
+        public event AjusteeConfigKeyEventHandler ConfigKeyChanged;
+
+        #endregion
+    }
+}
