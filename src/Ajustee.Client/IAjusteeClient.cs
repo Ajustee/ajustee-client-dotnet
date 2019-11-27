@@ -1,9 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-#if ASYNC
-using System.Threading;
-using System.Threading.Tasks;
-#endif
 
 namespace Ajustee
 {
@@ -20,19 +16,23 @@ namespace Ajustee
         IEnumerable<ConfigKey> GetConfigurations(string path, IDictionary<string, string> properties);
 
 #if ASYNC
-        Task<IEnumerable<ConfigKey>> GetConfigurationsAsync(CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<IEnumerable<ConfigKey>> GetConfigurationsAsync(System.Threading.CancellationToken cancellationToken = default);
 
-        Task<IEnumerable<ConfigKey>> GetConfigurationsAsync(string path, CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<IEnumerable<ConfigKey>> GetConfigurationsAsync(string path, System.Threading.CancellationToken cancellationToken = default);
 
-        Task<IEnumerable<ConfigKey>> GetConfigurationsAsync(IDictionary<string, string> properties, CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<IEnumerable<ConfigKey>> GetConfigurationsAsync(IDictionary<string, string> properties, System.Threading.CancellationToken cancellationToken = default);
 
-        Task<IEnumerable<ConfigKey>> GetConfigurationsAsync(string path, IDictionary<string, string> properties, CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<IEnumerable<ConfigKey>> GetConfigurationsAsync(string path, IDictionary<string, string> properties, System.Threading.CancellationToken cancellationToken = default);
 #endif
 
 #if SUBSCRIBE
         void Subscribe(string path);
 
         void Subscribe(string path, IDictionary<string, string> properties);
+
+        System.Threading.Tasks.Task SubscribeAsync(string path);
+
+        System.Threading.Tasks.Task SubscribeAsync(string path, IDictionary<string, string> properties);
 #endif
 
         #endregion

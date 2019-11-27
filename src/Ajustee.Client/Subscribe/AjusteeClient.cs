@@ -22,7 +22,7 @@ namespace Ajustee
                     if (m_Subscriber == null)
                     {
                         // Creates a new instance of the subscriber.
-                        m_Subscriber = new Subscriber(Settings);
+                        m_Subscriber = new Subscriber(Settings, k => OnConfigKeyChanged(new AjusteeConfigKeyEventArgs(k)));
 
                         // Handle the dispose of the subscriber.
                         InvokeOnDispose(() =>
@@ -53,6 +53,16 @@ namespace Ajustee
             EnsureSubscriber().Subscribe(path, properties);
         }
 
+        public async System.Threading.Tasks.Task SubscribeAsync(string path)
+        {
+            await SubscribeAsync(path, null);
+        }
+
+        public async System.Threading.Tasks.Task SubscribeAsync(string path, IDictionary<string, string> properties)
+        {
+            await EnsureSubscriber().SubscribeAsync(path, properties);
+        }
+
         #endregion
 
         #region Public events region
@@ -61,6 +71,15 @@ namespace Ajustee
         /// Occurs when configuration key has been changed.
         /// </summary>
         public event AjusteeConfigKeyEventHandler ConfigKeyChanged;
+
+        #endregion
+
+        #region Protected methods region
+
+        protected void OnConfigKeyChanged(AjusteeConfigKeyEventArgs e)
+        {
+            ConfigKeyChanged?.Invoke(this, e);
+        }
 
         #endregion
     }

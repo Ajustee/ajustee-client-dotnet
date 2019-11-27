@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -35,15 +34,15 @@ namespace Ajustee
             return JsonSerializer.Serialize(obj, obj.GetType(), m_JsonOptions);
         }
 
-        public IEnumerable<ConfigKey> Deserialize(Stream jsonStream)
+        public T Deserialize<T>(Stream jsonStream)
         {
             using var _jsonReader = new StreamReader(jsonStream, Encoding.UTF8);
-            return JsonSerializer.Deserialize<IEnumerable<ConfigKey>>(_jsonReader.ReadToEnd(), m_JsonOptions);
+            return JsonSerializer.Deserialize<T>(_jsonReader.ReadToEnd(), m_JsonOptions);
         }
 
-        public async Task<IEnumerable<ConfigKey>> DeserializeAsync(Stream jsonStream, CancellationToken cancellationToken = default)
+        public async Task<T> DeserializeAsync<T>(Stream jsonStream, CancellationToken cancellationToken = default)
         {
-            return await JsonSerializer.DeserializeAsync<IEnumerable<ConfigKey>>(jsonStream, m_JsonOptions, cancellationToken: cancellationToken);
+            return await JsonSerializer.DeserializeAsync<T>(jsonStream, m_JsonOptions, cancellationToken: cancellationToken);
         }
 
         #endregion

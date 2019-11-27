@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Text;
 
 using Newtonsoft.Json;
@@ -35,17 +34,17 @@ namespace Ajustee
             return _stringBuilder.ToString();
         }
 
-        public IEnumerable<ConfigKey> Deserialize(Stream jsonStream)
+        public T Deserialize<T>(Stream jsonStream)
         {
             using var _jsonReader = new JsonTextReader(new StreamReader(jsonStream, Encoding.UTF8));
-            return m_Serializer.Deserialize<IEnumerable<ConfigKey>>(_jsonReader);
+            return m_Serializer.Deserialize<T>(_jsonReader);
         }
 
 #if ASYNC
-        public async System.Threading.Tasks.Task<IEnumerable<ConfigKey>> DeserializeAsync(Stream jsonStream, System.Threading.CancellationToken cancellationToken = default)
+        public async System.Threading.Tasks.Task<T> DeserializeAsync<T>(Stream jsonStream, System.Threading.CancellationToken cancellationToken = default)
         {
             using var _jsonReader = new JsonTextReader(new StreamReader(jsonStream, Encoding.UTF8));
-            return await System.Threading.Tasks.Task.FromResult(m_Serializer.Deserialize<IEnumerable<ConfigKey>>(_jsonReader));
+            return await System.Threading.Tasks.Task.FromResult(m_Serializer.Deserialize<T>(_jsonReader));
         }
 #endif
 

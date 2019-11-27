@@ -13,6 +13,9 @@ namespace Ajustee
     {
         #region Private fields region
 
+        private const string m_ConfigurationKeysUrlTemplate = "configurationKeys?path={0}";
+        private const string m_WebSocketSchema = "wss";
+
         private static readonly ConcurrentDictionary<Type, Func<object, IList<KeyValuePair<string, string>>>> m_ReflecteMethodCache = new ConcurrentDictionary<Type, Func<object, IList<KeyValuePair<string, string>>>>();
 
         #endregion
@@ -37,12 +40,32 @@ namespace Ajustee
 
         #region Public fields region
 
-        public const string ConfigurationPathUrlTemplate = "{0}?path={1}";
-        public const string AppicationHeaderName = "x-api-key";
+        public const string AppIdName = "x-app-key";
+        public const string KeyPathName = "x-key-path";
+        public const string KeyPropsName = "x-key-props";
+        public static readonly IJsonSerializer JsonSerializer = JsonSerializerFactory.Create();
 
         #endregion
 
         #region Public methods region
+
+        public static Uri GetConfigurationKeysUrl(Uri baseUri, string keyPath)
+        {
+            if (baseUri.AbsoluteUri.EndsWith("/"))
+                baseUri = new Uri(baseUri.AbsoluteUri.TrimEnd('/'));
+            return new Uri(baseUri, string.Format(m_ConfigurationKeysUrlTemplate, keyPath));
+        }
+
+        public static Uri GetSubscribeUrl(Uri baseUri)
+        {
+#if DEBUG
+            return new Uri("wss://viz8masph1.execute-api.us-west-2.amazonaws.com/demo");
+#else
+            var _uriBuilder = new UriBuilder(baseUri);
+            _uriBuilder.Scheme = m_WebSocketSchema;// Sets websocket secure schema
+            return _uriBuilder.Uri;
+#endif
+        }
 
         public static void ValidateProperties(IEnumerable<KeyValuePair<string, string>> properties)
         {
@@ -53,7 +76,13 @@ namespace Ajustee
                     if (string.IsNullOrEmpty(_property.Key))
                         throw Error.InvalidPropertyName(_property.Key);
 
-                    if (string.Equals(AppicationHeaderName, _property.Key, StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(AppIdName, _property.Key, StringComparison.OrdinalIgnoreCase))
+                        throw Error.ReservedPropertyName(_property.Key);
+
+                    if (string.Equals(KeyPathName, _property.Key, StringComparison.OrdinalIgnoreCase))
+                        throw Error.ReservedPropertyName(_property.Key);
+
+                    if (string.Equals(KeyPropsName, _property.Key, StringComparison.OrdinalIgnoreCase))
                         throw Error.ReservedPropertyName(_property.Key);
                 }
             }
@@ -159,6 +188,6 @@ namespace Ajustee
             return _list ?? new KeyValuePair<string, string>[0];
         }
 
-        #endregion
+#endregion
     }
 }

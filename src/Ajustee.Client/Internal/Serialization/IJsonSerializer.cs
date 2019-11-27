@@ -9,10 +9,10 @@ namespace Ajustee
 
         string Serialize(object obj);
 
-        IEnumerable<ConfigKey> Deserialize(Stream jsonStream);
+        T Deserialize<T>(Stream jsonStream);
 
 #if ASYNC
-        System.Threading.Tasks.Task<IEnumerable<ConfigKey>> DeserializeAsync(Stream jsonStream, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<T> DeserializeAsync<T>(Stream jsonStream, System.Threading.CancellationToken cancellationToken = default);
 #endif
 
         #endregion

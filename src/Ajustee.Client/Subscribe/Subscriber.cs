@@ -1,7 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Net.WebSockets;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
+
+using static Ajustee.Helper;
 
 namespace Ajustee
 {
@@ -9,57 +15,127 @@ namespace Ajustee
     {
         #region Private fields region
 
-        private const string m_WebSocketSchema = "wss";
-        private const string m_AppIdName = "x-app-key";
-        private const string m_KeyPathName = "x-key-path";
-        private const string m_KeyPropsName = "x-key-props";
-        private static readonly IJsonSerializer m_JsonSerializer;
+        private const int m_BufferSize = 4096;
 
         private AjusteeConnectionSettings m_Settings;
         private ClientWebSocket m_WebSocket;
+        private readonly SemaphoreSlim m_SyncRoot = new SemaphoreSlim(1, 1);
+        private Action<ConfigKey> m_ReceiveCallback;
+        private CancellationTokenSource m_CancellationTokenSource;
 
         #endregion
 
         #region Private methods region
 
-        private static ClientWebSocket CreateWebSocket(AjusteeConnectionSettings settings, string path, IDictionary<string, string> properties)
+        private Task InitializeWebSocketAndConnect(string path, IDictionary<string, string> properties)
         {
             // Validate properties.
-            Helper.ValidateProperties(properties);
-            Helper.ValidateProperties(settings.DefaultProperties);
+            ValidateProperties(properties);
+            ValidateProperties(m_Settings.DefaultProperties);
 
-            var _socket = new ClientWebSocket();
-            _socket.Options.SetRequestHeader(m_AppIdName, settings.ApplicationId);
-            _socket.Options.SetRequestHeader(m_KeyPathName, path);
+            // Initializes cancellation token source.
+            m_CancellationTokenSource = new CancellationTokenSource();
+
+            // Creates web socket.
+            m_WebSocket = new ClientWebSocket();
+            m_WebSocket.Options.SetRequestHeader(AppIdName, m_Settings.ApplicationId);
+            m_WebSocket.Options.SetRequestHeader(KeyPathName, path);
             if (properties != null)
-                _socket.Options.SetRequestHeader(m_KeyPropsName, m_JsonSerializer.Serialize(properties));
-            return _socket;
+                m_WebSocket.Options.SetRequestHeader(KeyPropsName, JsonSerializer.Serialize(properties));
+
+            // Connects the web socket.
+            var _connectTask = m_WebSocket.ConnectAsync(GetSubscribeUrl(m_Settings.ApiUrl), m_CancellationTokenSource.Token);
+
+            // Registers recieve method in web socket.
+            var _awaiter = _connectTask.ConfigureAwait(false).GetAwaiter();
+            _awaiter.OnCompleted(RecieveImpl);
+
+            return _connectTask;
         }
 
-        private static Uri GetConnectionUrl(AjusteeConnectionSettings settings)
+        private void RecieveImpl()
         {
-#if DEBUG
-            return new Uri("wss://viz8masph1.execute-api.us-west-2.amazonaws.com/demo");
-#else
-            var _uriBuilder = new UriBuilder(settings.ApiUrl);
-            _uriBuilder.Scheme = m_WebSocketSchema;// Sets websocket secure schema
-            return _uriBuilder.Uri;
-#endif
+            var _cancellationToken = m_CancellationTokenSource.Token;
+
+            Task.Run(async () =>
+            {
+                try
+                {
+                    while (!_cancellationToken.IsCancellationRequested)
+                    {
+                        MemoryStream _memory = null; 
+
+                        var _buffer = new ArraySegment<byte>(new byte[m_BufferSize]);
+                        WebSocketReceiveResult _result = null;
+                        do
+                        {
+                            _result = await m_WebSocket.ReceiveAsync(_buffer, _cancellationToken);
+
+                            // Appends to the received data to the memory.
+                            if (_memory == null)
+                                _memory = new MemoryStream(_buffer.Array, 0, _result.Count);
+                            else
+                                _memory.Write(_buffer.Array, 0, _result.Count);
+                        }
+                        while (!_result.EndOfMessage);
+
+                        if (_memory != null && TryDeserialize(_memory, out var _configKey))
+                        {
+                            // Raises receive callback.
+                            m_ReceiveCallback(_configKey);
+                        }
+
+                        Debug.WriteLine($"Recieved {_memory.Length} bytes");
+                    }
+                }
+                catch (TaskCanceledException)
+                {
+                    Debug.WriteLine($"Cancelled");
+                }
+                catch (OperationCanceledException)
+                {
+                    Debug.WriteLine("Cancelled");
+                }
+                catch (WebSocketException _ex) when (_ex.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely)
+                {
+                    Debug.WriteLine($"Disconnected ({_ex.WebSocketErrorCode})");
+                }
+                catch (Exception _ex)
+                {
+                    Debug.WriteLine($"Occured error: {_ex.Message}");
+                }
+            }, _cancellationToken);
+
+            static bool TryDeserialize(Stream stream, out ConfigKey key)
+            {
+                try
+                {
+                    stream.Seek(0, SeekOrigin.Begin);
+                    key = JsonSerializer.Deserialize<ConfigKey>(stream);
+                }
+                catch (Exception _ex)
+                {
+                    Debug.WriteLine($"Occured error: {_ex.Message}");
+                }
+                key = null;
+                return false;
+            }
+        }
+
+        private Task SendCommand(WsCommand command)
+        {
+            return m_WebSocket.SendAsync(command.GetBinary(), WebSocketMessageType.Text, true, m_CancellationTokenSource.Token);
         }
 
         #endregion
 
         #region Public constructors region
 
-        public Subscriber(AjusteeConnectionSettings settings)
+        public Subscriber(AjusteeConnectionSettings settings, Action<ConfigKey> receiveCallback)
             : base()
         {
             m_Settings = settings;
-        }
-
-        static Subscriber()
-        {
-            m_JsonSerializer = JsonSerializerFactory.Create();
+            m_ReceiveCallback = receiveCallback;
         }
 
         #endregion
@@ -69,20 +145,45 @@ namespace Ajustee
         public void Subscribe(string path, IDictionary<string, string> properties)
         {
             var _initalConnected = false;
-            lock (this)
+            m_SyncRoot.Wait();
+            try
             {
                 if (m_WebSocket == null)
                 {
-                    m_WebSocket = CreateWebSocket(m_Settings, path, properties);
-                    m_WebSocket.ConnectAsync(GetConnectionUrl(m_Settings), CancellationToken.None).Wait();
+                    InitializeWebSocketAndConnect(path, properties).Wait();
                     _initalConnected = true;
                 }
             }
-
-            if (!_initalConnected)
+            finally
             {
-                //m_WebSocket.SendAsync();
+                m_SyncRoot.Release();
             }
+
+            // Sents subscribe command for next subscriptions.
+            if (!_initalConnected)
+                SendCommand(new WsSubscribeCommand(m_Settings, path, properties)).Wait();
+        }
+
+        public async Task SubscribeAsync(string path, IDictionary<string, string> properties)
+        {
+            var _initalConnected = false;
+            await m_SyncRoot.WaitAsync();
+            try
+            {
+                if (m_WebSocket == null)
+                {
+                    await InitializeWebSocketAndConnect(path, properties);
+                    _initalConnected = true;
+                }
+            }
+            finally
+            {
+                m_SyncRoot.Release();
+            }
+
+            // Sents subscribe command for next subscriptions.
+            if (!_initalConnected)
+                await SendCommand(new WsSubscribeCommand(m_Settings, path, properties));
         }
 
         public void Dispose()

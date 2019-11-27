@@ -96,7 +96,7 @@ namespace Ajustee
             using var _stream = _requst.GetStream(Settings, path, properties);
 
             // Deserialize stream and returns.
-            return m_JsonSerializer.Deserialize(_stream);
+            return m_JsonSerializer.Deserialize<IEnumerable<ConfigKey>>(_stream);
         }
 
 #if ASYNC
@@ -123,7 +123,7 @@ namespace Ajustee
             using var _stream = await _requst.GetStreamAsync(Settings, path, properties);
 
             // Deserialize stream and returns.
-            return await m_JsonSerializer.DeserializeAsync(_stream);
+            return await m_JsonSerializer.DeserializeAsync<IEnumerable<ConfigKey>>(_stream);
         }
 #endif
 
