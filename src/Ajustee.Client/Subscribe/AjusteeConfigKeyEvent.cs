@@ -1,4 +1,6 @@
 ﻿
+using System.Collections.Generic;
+
 namespace Ajustee
 {
     public delegate void AjusteeConfigKeyEventHandler(object ssender, AjusteeConfigKeyEventArgs args);
@@ -7,10 +9,10 @@ namespace Ajustee
     {
         #region Internal constructors region
 
-        internal AjusteeConfigKeyEventArgs(ConfigKey configKey)
+        internal AjusteeConfigKeyEventArgs(IEnumerable<ConfigKey> configKeys)
             : base()
         {
-            ConfigKey = configKey;
+            ConfigKeys = configKeys;
         }
 
         #endregion
@@ -18,9 +20,9 @@ namespace Ajustee
         #region Public properties region
 
         /// <summary>
-        /// Gets configuration key.
+        /// Gets configuration keys.
         /// </summary>
-        public ConfigKey ConfigKey { get; }
+        public IEnumerable<ConfigKey> ConfigKeys { get; }
 
         #endregion
     }

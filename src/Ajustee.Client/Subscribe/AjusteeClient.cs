@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 
 namespace Ajustee
 {
@@ -22,7 +23,7 @@ namespace Ajustee
                     if (m_Subscriber == null)
                     {
                         // Creates a new instance of the subscriber.
-                        m_Subscriber = new Subscriber(Settings, k => OnConfigKeyChanged(new AjusteeConfigKeyEventArgs(k)));
+                        m_Subscriber = new Subscriber(Settings, keys => OnConfigKeyChanged(new AjusteeConfigKeyEventArgs(keys)));
 
                         // Handle the dispose of the subscriber.
                         InvokeOnDispose(() =>
@@ -53,12 +54,12 @@ namespace Ajustee
             EnsureSubscriber().Subscribe(path, properties);
         }
 
-        public async System.Threading.Tasks.Task SubscribeAsync(string path)
+        public async System.Threading.Tasks.Task SubscribeAsync(string path, CancellationToken cancellationToken = default)
         {
             await SubscribeAsync(path, null);
         }
 
-        public async System.Threading.Tasks.Task SubscribeAsync(string path, IDictionary<string, string> properties)
+        public async System.Threading.Tasks.Task SubscribeAsync(string path, IDictionary<string, string> properties, CancellationToken cancellationToken = default)
         {
             await EnsureSubscriber().SubscribeAsync(path, properties);
         }

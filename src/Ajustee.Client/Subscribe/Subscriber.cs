@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.WebSockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 using static Ajustee.Helper;
+using ReceiveCallbackHandler = System.Action<System.Collections.Generic.IEnumerable<Ajustee.ConfigKey>>;
 
 namespace Ajustee
 {
@@ -20,7 +20,7 @@ namespace Ajustee
         private AjusteeConnectionSettings m_Settings;
         private ClientWebSocket m_WebSocket;
         private readonly SemaphoreSlim m_SyncRoot = new SemaphoreSlim(1, 1);
-        private Action<ConfigKey> m_ReceiveCallback;
+        private ReceiveCallbackHandler m_ReceiveCallback;
         private CancellationTokenSource m_CancellationTokenSource;
 
         #endregion
@@ -79,10 +79,10 @@ namespace Ajustee
                         }
                         while (!_result.EndOfMessage);
 
-                        if (_memory != null && TryDeserialize(_memory, out var _configKey))
+                        if (_memory != null && TryDeserialize(_memory, out var _configKeys))
                         {
                             // Raises receive callback.
-                            m_ReceiveCallback(_configKey);
+                            m_ReceiveCallback(_configKeys);
                         }
 
                         Debug.WriteLine($"Recieved {_memory.Length} bytes");
@@ -106,18 +106,18 @@ namespace Ajustee
                 }
             }, _cancellationToken);
 
-            static bool TryDeserialize(Stream stream, out ConfigKey key)
+            static bool TryDeserialize(Stream stream, out IEnumerable<ConfigKey> keys)
             {
                 try
                 {
                     stream.Seek(0, SeekOrigin.Begin);
-                    key = JsonSerializer.Deserialize<ConfigKey>(stream);
+                    keys = JsonSerializer.Deserialize<IEnumerable<ConfigKey>>(stream);
                 }
                 catch (Exception _ex)
                 {
                     Debug.WriteLine($"Occured error: {_ex.Message}");
                 }
-                key = null;
+                keys = null;
                 return false;
             }
         }
@@ -131,7 +131,7 @@ namespace Ajustee
 
         #region Public constructors region
 
-        public Subscriber(AjusteeConnectionSettings settings, Action<ConfigKey> receiveCallback)
+        public Subscriber(AjusteeConnectionSettings settings, ReceiveCallbackHandler receiveCallback)
             : base()
         {
             m_Settings = settings;
