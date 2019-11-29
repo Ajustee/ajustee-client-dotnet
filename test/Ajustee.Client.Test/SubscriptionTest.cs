@@ -1,37 +1,39 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.WebSockets;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using static Ajustee.Helper;
 
 #if XUNIT
 using Xunit;
 #elif NUNIT
 using NUnit.Framework;
-using Fact = NUnit.Framework.TestAttribute;
-using InlineData = NUnit.Framework.TestCaseAttribute;
+using MemberData = NUnit.Framework.TestCaseSourceAttribute;
 #endif
 
 namespace Ajustee
 {
     public class SubscriptionTest
     {
-        [Fact]
-        public async Task Test1()
+        #region Private fields region
+
+        public static readonly object[][] ReceiveMessageDeserializeTestData = new object[][]
         {
-            var _socket = new ClientWebSocket();
-            await _socket.ConnectAsync(new Uri("wss://viz8masph1.execute-api.us-west-2.amazonaws.com/demo?_keypath=key1"), CancellationToken.None);
+            new object[] {
+                new ReceiveMessage { Action = ReceiveMessage.ConfigKeys, Data = new[] { new ConfigKey { Path = "p", DataType = ConfigKeyType.Integer, Value = "v" } } },
+                @"{""action"":""configkeys"",""data"":[{""path"": ""p"",""dataType"": ""Integer"",""value"":""v""}]}"
+            }
+        };
 
-            string _connectionId = "12";
-            string _message = "{\"action\":\"notify\",\"data\":[\"" + _connectionId + "\"]}";
-            var _buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(_message));
-            await _socket.SendAsync(_buffer, WebSocketMessageType.Text, true, CancellationToken.None);
+        #endregion
 
-            //_buffer = new ArraySegment<byte>();
-            var _result = await _socket.ReceiveAsync(_buffer, CancellationToken.None);
+        #region Test methods
+
+        [Theory]
+        [MemberData(nameof(ReceiveMessageDeserializeTestData))]
+        public void ReceiveMessageDeserialize(object expected, string json)
+        {
+            var _expected = (ReceiveMessage)expected;
+            var _actual = JsonSerializer.Deserialize<ReceiveMessage>(json);
+            Assert.True(object.Equals(_expected.Action, _actual.Action));
         }
 
+        #endregion
     }
 }
