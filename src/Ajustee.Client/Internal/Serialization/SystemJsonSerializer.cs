@@ -1,10 +1,10 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text;
 
 namespace Ajustee
 {
@@ -48,6 +48,28 @@ namespace Ajustee
         public async Task<T> DeserializeAsync<T>(Stream jsonStream, CancellationToken cancellationToken = default)
         {
             return await JsonSerializer.DeserializeAsync<T>(jsonStream, m_JsonOptions, cancellationToken: cancellationToken);
+        }
+
+        #endregion
+    }
+
+    internal class JsonConfigValueConverter : JsonConverter<string>
+    {
+        #region Public methods region
+
+        public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            return reader.TokenType switch
+            {
+                JsonTokenType.True => "true",
+                JsonTokenType.False => "false",
+                _ => reader.GetString(),
+            };
+        }
+
+        public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options)
+        {
+            writer.WriteStringValue(value);
         }
 
         #endregion

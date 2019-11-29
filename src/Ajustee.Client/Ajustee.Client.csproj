@@ -6,7 +6,7 @@
     <VersionPrefix>0.3.4</VersionPrefix>
     <VersionSuffix>beta01</VersionSuffix>
     <AssemblyName>Ajustee.Client</AssemblyName>
-    <!--<TargetFramework>netstandard1.3</TargetFramework>-->
+    <!--<TargetFramework>netcoreapp3.0</TargetFramework>-->
     <TargetFrameworks>netcoreapp3.0;net461;net46;net45;net40;netstandard2.1;netstandard2.0;netstandard1.3</TargetFrameworks>
   </PropertyGroup>
 
@@ -36,9 +36,7 @@
   <!-- Ignore following items group from compilation if current json mode is not SJSON  -->
   <ItemGroup Condition="'$(JsonMode)' != 'SJSON'">
     <Compile Remove="Internal\Serialization\SystemJsonSerializer.cs" />
-    <Compile Remove="Internal\Serialization\JsonConfigValueConverter.cs" />
     <None Include="Internal\Serialization\SystemJsonSerializer.cs" />
-    <None Include="Internal\Serialization\JsonConfigValueConverter.cs" />
   </ItemGroup>
 
   <!-- Ignore following items group from compilation if current json mode is not NJSON  -->

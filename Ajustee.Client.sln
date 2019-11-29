@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ajustee.Client.Test", "test
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{BA89D455-BFE5-4D81-B8A8-A27E7B444913}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketEmulateTools", "test\WebSocketEmulateTools\WebSocketEmulateTools.csproj", "{3C53EF32-FFCB-4A3A-82EC-22BFE36AC869}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebSocketEmulateTools", "test\WebSocketEmulateTools\WebSocketEmulateTools.csproj", "{3C53EF32-FFCB-4A3A-82EC-22BFE36AC869}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

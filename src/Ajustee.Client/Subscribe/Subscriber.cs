@@ -13,32 +13,14 @@ namespace Ajustee
 {
     internal class Subscriber : IDisposable
     {
-        private struct ReceiveMessage
-        {
-            #region Public fields region
-
-            public const string ConfigKeys = "configkeys";
-            public const string Info = "info";
-            public const string Reset = "reset";
-
-            #endregion
-
-            #region Public properties region
-
-            public string Action { get; set; }
-            public string Data { get; set; }
-
-            #endregion
-        }
-
         #region Private fields region
 
         private const int m_BufferSize = 4096;
 
-        private AjusteeConnectionSettings m_Settings;
-        private ClientWebSocket m_WebSocket;
+        private readonly AjusteeConnectionSettings m_Settings;
         private readonly SemaphoreSlim m_SyncRoot = new SemaphoreSlim(1, 1);
-        private ReceiveCallbackHandler m_ReceiveCallback;
+        private readonly ReceiveCallbackHandler m_ReceiveCallback;
+        private ClientWebSocket m_WebSocket;
         private CancellationTokenSource m_CancellationTokenSource;
 
         #endregion
@@ -111,8 +93,7 @@ namespace Ajustee
                             {
                                 case ReceiveMessage.ConfigKeys:
                                     {
-                                        var _configKeys = JsonSerializer.Deserialize<IEnumerable<ConfigKey>>(_message.Data);
-                                        if (_configKeys != null)
+                                        if (_message.Data is IEnumerable<ConfigKey> _configKeys)
                                         {
                                             // Raises receive callback.
                                             m_ReceiveCallback(_configKeys);
