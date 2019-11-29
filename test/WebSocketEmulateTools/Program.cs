@@ -9,9 +9,9 @@ namespace Ajustee.Tools
         public static async Task Main(string[] args)
         {
             if (args != null && args.Length > 0 && args[0] == "ws")
-                await WebSocketClient.ExecuteAsync();
+                await WebSocketTool.ExecuteAsync();
             else
-                await AjusteeClient.ExecuteAsync();
+                await AjusteeClientTool.ExecuteAsync();
         }
 
         #endregion

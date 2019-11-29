@@ -6,6 +6,7 @@ using System.Collections;
 using System.Reflection;
 using System.Linq.Expressions;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace Ajustee
 {
@@ -59,7 +60,7 @@ namespace Ajustee
         public static Uri GetSubscribeUrl(Uri baseUri)
         {
 #if DEBUG
-            return new Uri("wss://viz8masph1.execute-api.us-west-2.amazonaws.com/demo");
+            return new Uri("wss://qlnzq5smse.execute-api.us-west-2.amazonaws.com/demo");
 #else
             var _uriBuilder = new UriBuilder(baseUri);
             _uriBuilder.Scheme = m_WebSocketSchema;// Sets websocket secure schema
@@ -188,6 +189,6 @@ namespace Ajustee
             return _list ?? new KeyValuePair<string, string>[0];
         }
 
-#endregion
+        #endregion
     }
 }

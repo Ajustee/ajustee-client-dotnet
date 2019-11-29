@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Text;
@@ -27,10 +28,10 @@ namespace Ajustee.Tools
             return new AjusteeClient(new AjusteeConnectionSettings { ApiUrl = new Uri(apiUrl), ApplicationId = appId });
         }
 
-        private static string ReadLine()
+        private static string ReadLine(bool indend = true)
         {
             var _value = Console.ReadLine();
-            Console.Write("> ");
+            if (indend) Console.Write("> ");
             return _value;
         }
 
@@ -41,35 +42,6 @@ namespace Ajustee.Tools
                 Console.WriteLine($"{value}");
                 Console.Write("> ");
             }
-        }
-
-        private static Task Recieve(WebSocket socket, CancellationToken cancellationToken)
-        {
-            return Task.Run(async () =>
-            {
-                try
-                {
-                    while (!cancellationToken.IsCancellationRequested)
-                    {
-                        var _message = new StringBuilder();
-
-                        var _segment = new ArraySegment<byte>(new byte[4096]);
-                        WebSocketReceiveResult _result = null;
-                        do
-                        {
-                            _result = await socket.ReceiveAsync(_segment, cancellationToken);
-                            _message.Append(Encoding.UTF8.GetString(_segment.Array, 0, _result.Count));
-                        }
-                        while (!_result.EndOfMessage);
-
-                        WriteLine(_message.ToString());
-                    }
-                }
-                catch (WebSocketException _ex) when (_ex.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely)
-                {
-                    Console.WriteLine($"Disconnected ({_ex.NativeErrorCode})");
-                }
-            }, cancellationToken);
         }
 
         private static Task Subscribe(AjusteeClient client, CancellationToken cancellationToken, Func<string, object> messageFilter)
@@ -97,14 +69,14 @@ namespace Ajustee.Tools
 
             while (true)
             {
-                Console.Write("Enter url: "); var _url = Console.ReadLine();
-                Console.Write("Enter app-id: "); var _appId = Console.ReadLine();
+                Console.Write("Enter url: "); var _url = ReadLine(indend: false);
+                Console.Write("Enter app-id: "); var _appId = ReadLine();
 
                 var _cancellationTokenSource = new CancellationTokenSource();
                 try
                 {
                     var _client = CreateClient(_url, _appId);
-                    _client.ConfigKeyChanged += (_, e) => WriteLine(e.ConfigKeys.ToString());
+                    _client.ConfigKeyChanged += (_, e) => WriteLine(JsonSerializer.Serialize(e.ConfigKeys));
 
                     await Subscribe(_client, cancellationToken: _cancellationTokenSource.Token, m =>
                     {
@@ -116,8 +88,10 @@ namespace Ajustee.Tools
                         }
                         else if (string.Equals(m, "subscribe", StringComparison.OrdinalIgnoreCase))
                         {
-                            Console.Write("Enter key path: "); var _keyPath = Console.ReadLine();
-                            Console.Write("Enter properties: "); var _properties = Console.ReadLine();
+                            Console.Write("Enter key path: "); var _keyPath = ReadLine();
+                            if (_keyPath == "exit") return null;
+                            Console.Write("Enter properties: "); var _properties = ReadLine();
+                            if (_properties == "exit") return null;
                             return KeyValuePair.Create(_keyPath, JsonSerializer.Deserialize<IDictionary<string, string>>(_properties));
                         }
                         return null;

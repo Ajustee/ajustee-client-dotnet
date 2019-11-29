@@ -60,6 +60,10 @@ namespace Ajustee.Tools
                         do
                         {
                             _result = await socket.ReceiveAsync(_segment, cancellationToken);
+
+                            if (_result.MessageType == WebSocketMessageType.Close)
+                                throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely);
+
                             _message.Append(Encoding.UTF8.GetString(_segment.Array, 0, _result.Count));
                         }
                         while (!_result.EndOfMessage);

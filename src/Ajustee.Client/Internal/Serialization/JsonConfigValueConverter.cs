@@ -1,5 +1,4 @@
 ﻿using System;
-
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -7,6 +6,8 @@ namespace Ajustee
 {
     internal class JsonConfigValueConverter : JsonConverter<string>
     {
+        #region Public methods region
+
         public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             return reader.TokenType switch
@@ -19,7 +20,9 @@ namespace Ajustee
 
         public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options)
         {
-            throw new NotImplementedException();
+            writer.WriteStringValue(value);
         }
+
+        #endregion
     }
 }

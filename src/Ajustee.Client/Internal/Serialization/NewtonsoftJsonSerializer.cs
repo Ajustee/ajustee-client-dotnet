@@ -34,6 +34,12 @@ namespace Ajustee
             return _stringBuilder.ToString();
         }
 
+        public T Deserialize<T>(string json)
+        {
+            using var _jsonReader = new JsonTextReader(new StringReader(json));
+            return m_Serializer.Deserialize<T>(_jsonReader);
+        }
+
         public T Deserialize<T>(Stream jsonStream)
         {
             using var _jsonReader = new JsonTextReader(new StreamReader(jsonStream, Encoding.UTF8));

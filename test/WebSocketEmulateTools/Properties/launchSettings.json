@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "WebSocketEmulateTools": {
+      "commandName": "Project",
+      "commandLineArgs": "_ws"
+    }
+  }
+}

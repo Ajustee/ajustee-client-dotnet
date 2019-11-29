@@ -34,6 +34,11 @@ namespace Ajustee
             return JsonSerializer.Serialize(obj, obj.GetType(), m_JsonOptions);
         }
 
+        public T Deserialize<T>(string json)
+        {
+            return JsonSerializer.Deserialize<T>(json);
+        }
+
         public T Deserialize<T>(Stream jsonStream)
         {
             using var _jsonReader = new StreamReader(jsonStream, Encoding.UTF8);

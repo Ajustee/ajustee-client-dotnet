@@ -13,6 +13,24 @@ namespace Ajustee
 {
     internal class Subscriber : IDisposable
     {
+        private struct ReceiveMessage
+        {
+            #region Public fields region
+
+            public const string ConfigKeys = "configkeys";
+            public const string Info = "info";
+            public const string Reset = "reset";
+
+            #endregion
+
+            #region Public properties region
+
+            public string Action { get; set; }
+            public string Data { get; set; }
+
+            #endregion
+        }
+
         #region Private fields region
 
         private const int m_BufferSize = 4096;
@@ -63,13 +81,17 @@ namespace Ajustee
                 {
                     while (!_cancellationToken.IsCancellationRequested)
                     {
-                        MemoryStream _memory = null; 
+                        MemoryStream _memory = null;
 
                         var _buffer = new ArraySegment<byte>(new byte[m_BufferSize]);
                         WebSocketReceiveResult _result = null;
                         do
                         {
                             _result = await m_WebSocket.ReceiveAsync(_buffer, _cancellationToken);
+
+                            // Check to close result.
+                            if (_result.MessageType == WebSocketMessageType.Close)
+                                throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely);
 
                             // Appends to the received data to the memory.
                             if (_memory == null)
@@ -79,13 +101,42 @@ namespace Ajustee
                         }
                         while (!_result.EndOfMessage);
 
-                        if (_memory != null && TryDeserialize(_memory, out var _configKeys))
+                        try
                         {
-                            // Raises receive callback.
-                            m_ReceiveCallback(_configKeys);
-                        }
+                            // Gets received message.
+                            _memory.Seek(0, SeekOrigin.Begin);
+                            var _message = JsonSerializer.Deserialize<ReceiveMessage>(_memory);
 
-                        Debug.WriteLine($"Recieved {_memory.Length} bytes");
+                            switch (_message.Action)
+                            {
+                                case ReceiveMessage.ConfigKeys:
+                                    {
+                                        var _configKeys = JsonSerializer.Deserialize<IEnumerable<ConfigKey>>(_message.Data);
+                                        if (_configKeys != null)
+                                        {
+                                            // Raises receive callback.
+                                            m_ReceiveCallback(_configKeys);
+                                        }
+                                        break;
+                                    }
+
+                                case ReceiveMessage.Info:
+                                    {
+                                        // Gets connection informations.
+                                        throw new NotImplementedException();
+                                    }
+
+                                case ReceiveMessage.Reset:
+                                    {
+                                        // Required reset all and reconnect.
+                                        throw new NotImplementedException();
+                                    }
+                            }
+                        }
+                        catch (Exception _ex)
+                        {
+                            Debug.WriteLine($"Occured error: {_ex.Message}");
+                        }
                     }
                 }
                 catch (TaskCanceledException)
@@ -105,21 +156,6 @@ namespace Ajustee
                     Debug.WriteLine($"Occured error: {_ex.Message}");
                 }
             }, _cancellationToken);
-
-            static bool TryDeserialize(Stream stream, out IEnumerable<ConfigKey> keys)
-            {
-                try
-                {
-                    stream.Seek(0, SeekOrigin.Begin);
-                    keys = JsonSerializer.Deserialize<IEnumerable<ConfigKey>>(stream);
-                }
-                catch (Exception _ex)
-                {
-                    Debug.WriteLine($"Occured error: {_ex.Message}");
-                }
-                keys = null;
-                return false;
-            }
         }
 
         private Task SendCommand(WsCommand command)
