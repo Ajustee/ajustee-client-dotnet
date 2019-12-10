@@ -21,34 +21,30 @@ namespace Ajustee
 
         #endregion
 
-        #region Private methods region
-
-        private static string ValidateAndGetPropertyName(object name)
-        {
-            if (name is string _name) return _name;
-            throw new InvalidCastException("Property value should be string");
-        }
-
-        private static string FormatPropertyValue(object value)
-        {
-            if (value is string _str) return _str;
-            if (value is null) return string.Empty;
-            return string.Format(CultureInfo.InvariantCulture, "{0}", value);
-
-        }
-
-        #endregion
-
         #region Public fields region
 
-        public const string AppIdName = "x-app-key";
+        public const string AppIdName = "x-api-key";
         public const string KeyPathName = "x-key-path";
         public const string KeyPropsName = "x-key-props";
+        public const string TrackerIdName = "ajustee-tracker-id";
         public static readonly IJsonSerializer JsonSerializer = JsonSerializerFactory.Create();
 
         #endregion
 
         #region Public methods region
+
+        public static string ValidateAndGetPropertyName(object name)
+        {
+            if (name is string _name) return _name;
+            throw new InvalidCastException("Property value should be string");
+        }
+
+        public static string FormatPropertyValue(object value)
+        {
+            if (value is string _str) return _str;
+            if (value is null) return string.Empty;
+            return string.Format(CultureInfo.InvariantCulture, "{0}", value);
+        }
 
         public static Uri GetConfigurationKeysUrl(Uri baseUri, string keyPath)
         {
@@ -60,7 +56,9 @@ namespace Ajustee
         public static Uri GetSubscribeUrl(Uri baseUri)
         {
 #if DEBUG
-            return new Uri("wss://qlnzq5smse.execute-api.us-west-2.amazonaws.com/demo");
+            return new Uri("wss://viz8masph1.execute-api.us-west-2.amazonaws.com/demo");
+            //return new Uri("wss://qlnzq5smse.execute-api.us-west-2.amazonaws.com/demo");
+            
 #else
             var _uriBuilder = new UriBuilder(baseUri);
             _uriBuilder.Scheme = m_WebSocketSchema;// Sets websocket secure schema

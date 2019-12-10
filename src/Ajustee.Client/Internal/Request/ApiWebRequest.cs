@@ -36,8 +36,9 @@ namespace Ajustee
             // Sets method name.
             _request.Method = "GET";
 
-            // Adds header to specify customer's application id.
+            // Adds headers of specify customers.
             _request.Headers.Add(AppIdName, settings.ApplicationId);
+            if (settings.TrackerId != null) _request.Headers.Add(TrackerIdName, FormatPropertyValue(settings.TrackerId));
 
             // Validate properties.
             ValidateProperties(properties);

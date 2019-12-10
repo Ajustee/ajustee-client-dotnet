@@ -24,8 +24,9 @@ namespace Ajustee
             // Creates get http request with api url and specified configuration path.
             var _message = new HttpRequestMessage(HttpMethod.Get, GetConfigurationKeysUrl(settings.ApiUrl, path ?? settings.DefaultPath));
 
-            // Adds header to specify customer's application id.
+            // Adds headers of specify customers.
             _message.Headers.Add(AppIdName, settings.ApplicationId);
+            if (settings.TrackerId != null) _message.Headers.Add(TrackerIdName, FormatPropertyValue(settings.TrackerId));
 
             // Validate properties.
             ValidateProperties(properties);
