@@ -6,14 +6,14 @@ namespace Ajustee
     {
         #region Internal methods region
 
-        internal static Exception InvalidHeaderName(string headerName)
+        internal static Exception InvalidPropertyName(string propertyName)
         {
-            return new AjusteeException(string.Format(Resources.GetString("ERR_INVALID_HEADER_NAME"), headerName));
+            return new AjusteeException(string.Format(Resources.GetString("ERR_INVALID_PROPERTY_NAME"), propertyName));
         }
 
-        internal static Exception ReservedHeaderName(string headerName)
+        internal static Exception ReservedPropertyName(string propertyName)
         {
-            return new AjusteeException(string.Format(Resources.GetString("ERR_RESERVER_HEADER_NAME"), headerName));
+            return new AjusteeException(string.Format(Resources.GetString("ERR_RESERVER_PROPERTY_NAME"), propertyName));
         }
 
         internal static Exception ConfigValueCannotBeNull()

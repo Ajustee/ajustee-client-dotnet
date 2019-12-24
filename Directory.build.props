@@ -4,9 +4,15 @@
     <Authors>Ajustee Team</Authors>
     <Copyright>Copyright 2019 © Ajustee</Copyright>
     <Company>Ajustee</Company>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <NoWarn>CS1591</NoWarn>
     <LangVersion>latest</LangVersion>
     <RootNamespace>Ajustee</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GenerateDocumentationFile Condition="'$(Configuration)' == 'Release'">true</GenerateDocumentationFile>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)ajustee.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
 
 </Project>

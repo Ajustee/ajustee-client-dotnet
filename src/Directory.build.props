@@ -1,0 +1,19 @@
+<Project>
+  <Import Project="../Directory.build.props" />
+  
+  <PropertyGroup>
+    <PackageTags>Ajustee Configuration Keys Client .Net</PackageTags>
+    <PackageProjectUrl>https://help.ajustee.com/article/15-retrieving-configuration-in-net</PackageProjectUrl>
+    <PackageIconUrl>https://avatars3.githubusercontent.com/u/49758154?s=128</PackageIconUrl>
+    <PackageIcon>ajustee.png</PackageIcon>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/Ajustee/ajustee-client-dotnet</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)../ajustee.png" Pack="true" PackagePath="">
+      <Visible>False</Visible>
+    </None>
+  </ItemGroup>
+
+</Project>

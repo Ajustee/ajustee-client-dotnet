@@ -1,5 +1,5 @@
-﻿
-using System;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Ajustee
 {
@@ -24,6 +24,16 @@ namespace Ajustee
         /// Gets or sets default path to get configurations. Value is optional.
         /// </summary>
         public string DefaultPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets default properties to get configurations. Value is optional.
+        /// </summary>
+        public IDictionary<string, string> DefaultProperties { get; set; }
+
+        /// <summary>
+        /// Gets or sets tracker id.
+        /// </summary>
+        public object TrackerId { get; set; }
 
         #endregion
     }

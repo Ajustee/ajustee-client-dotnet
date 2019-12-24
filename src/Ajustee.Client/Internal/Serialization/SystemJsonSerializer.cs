@@ -1,11 +1,10 @@
-﻿using System.IO;
-using System.Collections.Generic;
+﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text;
 
 namespace Ajustee
 {
@@ -30,15 +29,47 @@ namespace Ajustee
 
         #region Public methods region
 
-        public IEnumerable<ConfigKey> Deserialize(Stream jsonStream)
+        public string Serialize(object obj)
         {
-            using var _jsonReader = new StreamReader(jsonStream, Encoding.UTF8);
-            return JsonSerializer.Deserialize<IEnumerable<ConfigKey>>(_jsonReader.ReadToEnd(), m_JsonOptions);
+            return JsonSerializer.Serialize(obj, obj.GetType(), m_JsonOptions);
         }
 
-        public async Task<IEnumerable<ConfigKey>> DeserializeAsync(Stream jsonStream, CancellationToken cancellationToken = default)
+        public T Deserialize<T>(string json)
         {
-            return await JsonSerializer.DeserializeAsync<IEnumerable<ConfigKey>>(jsonStream, m_JsonOptions, cancellationToken: cancellationToken);
+            return JsonSerializer.Deserialize<T>(json);
+        }
+
+        public T Deserialize<T>(Stream jsonStream)
+        {
+            using var _jsonReader = new StreamReader(jsonStream, Encoding.UTF8);
+            return JsonSerializer.Deserialize<T>(_jsonReader.ReadToEnd(), m_JsonOptions);
+        }
+
+        public async Task<T> DeserializeAsync<T>(Stream jsonStream, CancellationToken cancellationToken = default)
+        {
+            return await JsonSerializer.DeserializeAsync<T>(jsonStream, m_JsonOptions, cancellationToken: cancellationToken);
+        }
+
+        #endregion
+    }
+
+    internal class JsonConfigValueConverter : JsonConverter<string>
+    {
+        #region Public methods region
+
+        public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            return reader.TokenType switch
+            {
+                JsonTokenType.True => "true",
+                JsonTokenType.False => "false",
+                _ => reader.GetString(),
+            };
+        }
+
+        public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options)
+        {
+            writer.WriteStringValue(value);
         }
 
         #endregion

@@ -3,9 +3,10 @@
   <PropertyGroup>
     <Title>Ajustee Client</Title>
     <Description>Ajustee client for .NET</Description>
-    <VersionPrefix>0.3.0</VersionPrefix>
+    <VersionPrefix>0.3.4</VersionPrefix>
     <VersionSuffix>beta01</VersionSuffix>
     <AssemblyName>Ajustee.Client</AssemblyName>
+    <!--<TargetFramework>netcoreapp3.0</TargetFramework>-->
     <TargetFrameworks>netcoreapp3.0;net461;net46;net45;net40;netstandard2.1;netstandard2.0;netstandard1.3</TargetFrameworks>
   </PropertyGroup>
 
@@ -16,8 +17,11 @@
     <RequestMode Condition="'$(RequestMode)' == ''">RHTTP</RequestMode>
     <AsyncMode Condition="'$(TargetFramework)' == 'net40'">False</AsyncMode>
     <AsyncMode Condition="'$(AsyncMode)' == ''">True</AsyncMode>
+    <SupportSubscribe Condition="'$(TargetFramework)' == 'net40'">False</SupportSubscribe>
+    <SupportSubscribe Condition="'$(SupportSubscribe)' == ''">True</SupportSubscribe>
     <DefineConstants>$(DefineConstants);$(JsonMode);$(RequestMode)</DefineConstants>
     <DefineConstants Condition="'$(AsyncMode)' == 'True'">$(DefineConstants);ASYNC</DefineConstants>
+    <DefineConstants Condition="'$(SupportSubscribe)' == 'True'">$(DefineConstants);SUBSCRIBE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,14 +29,14 @@
     <PackageReference Condition="'$(JsonMode)' == 'SJSON' AND '$(TargetFramework)' != 'netcoreapp3.0'" Include="System.Text.Json" Version="4.6.0" />
     <!-- NJSON means Newtonsoft JSON -->
     <PackageReference Condition="'$(JsonMode)' == 'NJSON'" Include="Newtonsoft.Json" Version="12.0.2" />
+    <!--WebSocket for netstandard1.3 -->
+    <PackageReference Condition="'$(TargetFramework)' == 'netstandard1.3'" Include="System.Net.WebSockets.Client" Version="4.3.2" />
   </ItemGroup>
 
   <!-- Ignore following items group from compilation if current json mode is not SJSON  -->
   <ItemGroup Condition="'$(JsonMode)' != 'SJSON'">
     <Compile Remove="Internal\Serialization\SystemJsonSerializer.cs" />
-    <Compile Remove="Internal\Serialization\JsonConfigValueConverter.cs" />
     <None Include="Internal\Serialization\SystemJsonSerializer.cs" />
-    <None Include="Internal\Serialization\JsonConfigValueConverter.cs" />
   </ItemGroup>
 
   <!-- Ignore following items group from compilation if current json mode is not NJSON  -->
@@ -53,15 +57,16 @@
     <None Include="Internal\Request\ApiHttpRequest.cs" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(SupportSubscribe)' == 'False'">
+    <Compile Remove="Subscribe\*.cs" />
+    <None Include="Subscribe\*.cs" />
+  </ItemGroup>    
+
   <ItemGroup>
     <Compile Update="Properties\Resources.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
-  </ItemGroup>
-  
-  <ItemGroup>
-    <None Include="Resources\AjusteeIcon.png" Pack="true" PackagePath="" />
-  </ItemGroup>
+  </ItemGroup>    
 
 </Project>

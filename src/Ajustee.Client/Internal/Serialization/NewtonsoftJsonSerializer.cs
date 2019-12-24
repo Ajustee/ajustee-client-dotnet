@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Text;
 
@@ -28,17 +28,30 @@ namespace Ajustee
 
         #region Public methods region
 
-        public IEnumerable<ConfigKey> Deserialize(Stream jsonStream)
+        public string Serialize(object obj)
+        {
+            var _stringBuilder = new StringBuilder();
+            m_Serializer.Serialize(new StringWriter(_stringBuilder), obj);
+            return _stringBuilder.ToString();
+        }
+
+        public T Deserialize<T>(string json)
+        {
+            using var _jsonReader = new JsonTextReader(new StringReader(json));
+            return m_Serializer.Deserialize<T>(_jsonReader);
+        }
+
+        public T Deserialize<T>(Stream jsonStream)
         {
             using var _jsonReader = new JsonTextReader(new StreamReader(jsonStream, Encoding.UTF8));
-            return m_Serializer.Deserialize<IEnumerable<ConfigKey>>(_jsonReader);
+            return m_Serializer.Deserialize<T>(_jsonReader);
         }
 
 #if ASYNC
-        public async System.Threading.Tasks.Task<IEnumerable<ConfigKey>> DeserializeAsync(Stream jsonStream, System.Threading.CancellationToken cancellationToken = default)
+        public async System.Threading.Tasks.Task<T> DeserializeAsync<T>(Stream jsonStream, System.Threading.CancellationToken cancellationToken = default)
         {
             using var _jsonReader = new JsonTextReader(new StreamReader(jsonStream, Encoding.UTF8));
-            return await System.Threading.Tasks.Task.FromResult(m_Serializer.Deserialize<IEnumerable<ConfigKey>>(_jsonReader));
+            return await System.Threading.Tasks.Task.FromResult(m_Serializer.Deserialize<T>(_jsonReader));
         }
 #endif
 
