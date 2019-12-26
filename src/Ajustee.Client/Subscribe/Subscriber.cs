@@ -22,6 +22,7 @@ namespace Ajustee
         private readonly ReceiveCallbackHandler m_ReceiveCallback;
         private ClientWebSocket m_WebSocket;
         private CancellationTokenSource m_CancellationTokenSource;
+        private string m_ConnectionId;
 
         #endregion
 
@@ -73,7 +74,7 @@ namespace Ajustee
 
                             // Check to close result.
                             if (_result.MessageType == WebSocketMessageType.Close)
-                                throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely);
+                                throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely, _result.CloseStatusDescription);
 
                             // Appends to the received data to the memory.
                             if (_memory == null)
@@ -103,8 +104,12 @@ namespace Ajustee
 
                                 case ReceiveMessage.Info:
                                     {
-                                        // Gets connection informations.
-                                        throw new NotImplementedException();
+                                        if (_message.Data is string _connectionId)
+                                        {
+                                            // Sets connection id.
+                                            m_ConnectionId = _connectionId;
+                                        }
+                                        break;
                                     }
 
                                 case ReceiveMessage.Reset:

@@ -65,6 +65,11 @@ namespace Ajustee
                                             _data = JsonSerializer.Deserialize<IEnumerable<ConfigKey>>(ref reader, options);
                                             _property = null;
                                             break;
+
+                                        case ReceiveMessage.Info:
+                                            _data = reader.GetString(); // ConnectionId
+                                            _property = null;
+                                            break;
                                     }
                                     break;
                             }
