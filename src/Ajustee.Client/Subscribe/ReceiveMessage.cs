@@ -49,7 +49,8 @@ namespace Ajustee
                         _property = reader.GetString().ToLowerInvariant();
                         break;
 
-                    default:
+                    case JsonTokenType.String:
+                    case JsonTokenType.StartArray:
                         if (_property != null)
                         {
                             switch (_property)
@@ -110,6 +111,10 @@ namespace Ajustee
                                     case ReceiveMessage.ConfigKeys:
                                         if (reader.Read())
                                             _data = serializer.Deserialize<IEnumerable<ConfigKey>>(reader);
+                                        break;
+
+                                    case ReceiveMessage.Info:
+                                        _data = reader.ReadAsString();
                                         break;
                                 }
                                 break;

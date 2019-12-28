@@ -56,8 +56,18 @@ namespace Ajustee
         public WsSubscribeCommand(AjusteeConnectionSettings settings, string path, IDictionary<string, string> properties)
             : base("subscribe")
         {
+            Path = path;
+            Properties = properties;
             SetData($"{{\"{AppIdName}\":\"{settings.ApplicationId}\",\"{KeyPathName}\":\"{path}\",\"{KeyPropsName}:\"{(properties == null ? "null": JsonSerializer.Serialize(properties))}}}");
         }
+
+        #endregion
+
+        #region Public properties region
+
+        public string Path { get; }
+
+        public IDictionary<string, string> Properties { get; }
 
         #endregion
     }

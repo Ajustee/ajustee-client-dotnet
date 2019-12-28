@@ -66,8 +66,8 @@ namespace Ajustee.Tools
 
             while (true)
             {
-                Console.Write("Enter url: "); var _url = ReadLine(indend: false);
-                Console.Write("Enter app-id: "); var _appId = ReadLine();
+                Console.Write("Enter url: "); var _url = "wss://qlnzq5smse.execute-api.us-west-2.amazonaws.com/demo";//ReadLine(indend: false);
+                Console.Write("Enter app-id: "); var _appId = "112";// ReadLine();
 
                 var _cancellationTokenSource = new CancellationTokenSource();
                 try

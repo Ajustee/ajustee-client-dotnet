@@ -14,6 +14,11 @@ namespace Ajustee
 
         #region Private methods region
 
+        internal virtual Subscriber CreateSubscriber()
+        {
+            return new WebSocketSubscriber(Settings, keys => OnConfigKeyChanged(new AjusteeConfigKeyEventArgs(keys)));
+        }
+
         private Subscriber EnsureSubscriber()
         {
             if (m_Subscriber == null)
@@ -23,7 +28,7 @@ namespace Ajustee
                     if (m_Subscriber == null)
                     {
                         // Creates a new instance of the subscriber.
-                        m_Subscriber = new Subscriber(Settings, keys => OnConfigKeyChanged(new AjusteeConfigKeyEventArgs(keys)));
+                        m_Subscriber = CreateSubscriber();
 
                         // Handle the dispose of the subscriber.
                         InvokeOnDispose(() =>

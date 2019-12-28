@@ -8,8 +8,11 @@
     <TestType Condition="'$(TestType)' == ''">XUNIT</TestType>
     <AsyncMode Condition="'$(TargetFramework)' == 'net40'">False</AsyncMode>
     <AsyncMode Condition="'$(AsyncMode)' == ''">True</AsyncMode>
+    <SupportSubscribe Condition="'$(TargetFramework)' == 'net40'">False</SupportSubscribe>
+    <SupportSubscribe Condition="'$(SupportSubscribe)' == ''">True</SupportSubscribe>
     <DefineConstants>$(DefineConstants);$(TestType)</DefineConstants>
     <DefineConstants Condition="'$(AsyncMode)' == 'True'">$(DefineConstants);ASYNC</DefineConstants>
+    <DefineConstants Condition="'$(SupportSubscribe)' == 'True'">$(DefineConstants);SUBSCRIBE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,6 +39,8 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net40'">
     <Compile Remove="SubscriptionTest.cs" />
     <None Include="SubscriptionTest.cs" />
+    <Compile Remove="Internal\FakeSubscriber.cs" />
+    <None Include="Internal\FakeSubscriber.cs" />
   </ItemGroup>
 
 </Project>

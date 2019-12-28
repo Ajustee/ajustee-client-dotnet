@@ -36,7 +36,7 @@ namespace Ajustee
 
         public T Deserialize<T>(string json)
         {
-            return JsonSerializer.Deserialize<T>(json);
+            return JsonSerializer.Deserialize<T>(json, m_JsonOptions);
         }
 
         public T Deserialize<T>(Stream jsonStream)
