@@ -4,30 +4,40 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
+using static Ajustee.Helper;
+
 namespace Ajustee
 {
     internal class FakeSubscriber : Subscriber
     {
-        public List<KeyValuePair<string, IDictionary<string, string>>> SubscribeInputs = new List<KeyValuePair<string, IDictionary<string, string>>>();
+        public List<string> Output = new List<string>();
+        private Queue<string> m_ReceiveScenarioSteps = new Queue<string>();
 
         public FakeSubscriber(AjusteeConnectionSettings settings)
             : base(settings)
         { }
 
-        protected override Task ConnectAsync(string path, IDictionary<string, string> properties, CancellationToken cancellationToken)
+        public void SetReceiveScenario(params string[] steps)
         {
-            SubscribeInputs.Add(new KeyValuePair<string, IDictionary<string, string>>(path, properties));
-            return Task.Delay(1);
+            foreach (var _step in steps) m_ReceiveScenarioSteps.Enqueue(_step);
         }
 
-        protected override void OnReceiveMessage(ReceiveMessage message)
+        protected override async Task ConnectAsync(string path, IDictionary<string, string> properties, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
-        }
-
-        protected override Task ReceiveAsync(MemoryStream stream, CancellationToken cancellationToken)
-        {
-            return Task.Delay(1);
+            var _result = $"{nameof(ConnectAsync)}({path}, {(properties == null ? "" : JsonSerializer.Serialize(properties))})";
+            try
+            {
+                await Task.Delay(1);
+                _result += ": OK";
+            }
+            catch (Exception)
+            {
+                _result += ": FAILED";
+            }
+            finally
+            {
+                Output.Add(_result);
+            }
         }
 
         protected override Task SendCommandAsync(WsCommand command, CancellationToken cancellationToken)
@@ -35,10 +45,20 @@ namespace Ajustee
             switch (command)
             {
                 case WsSubscribeCommand _subCommand:
-                    SubscribeInputs.Add(new KeyValuePair<string, IDictionary<string, string>>(_subCommand.Path, _subCommand.Properties));
+                    Output.Add($"{nameof(SendCommandAsync)}({_subCommand.Path}, {(_subCommand.Properties == null ? "" : JsonSerializer.Serialize(_subCommand.Properties))}): OK");
                     break;
             }
             return Task.FromResult(0);
+        }
+
+        protected override Task ReceiveAsync(MemoryStream stream, CancellationToken cancellationToken)
+        {
+            return Task.Delay(1);
+        }
+
+        protected override void OnReceiveMessage(ReceiveMessage message)
+        {
+            throw new NotImplementedException();
         }
     }
 }

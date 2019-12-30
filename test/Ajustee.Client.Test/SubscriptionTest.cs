@@ -64,14 +64,22 @@ namespace Ajustee
         {
             using var _client = CreateClient();
             _client.Subscribe("key1");
-            Assert.True(_client.Subscriber.SubscribeInputs.Count == 1);
-            Assert.True(_client.Subscriber.SubscribeInputs[0].Key == "key1");
-            Assert.True(_client.Subscriber.SubscribeInputs[0].Value == null);
-
             _client.Subscribe("key2", new Dictionary<string, string> { { "p", "v" } });
-            Assert.True(_client.Subscriber.SubscribeInputs.Count == 2);
-            Assert.True(_client.Subscriber.SubscribeInputs[1].Key == "key2");
-            Assert.True(_client.Subscriber.SubscribeInputs[1].Value["p"] == "v");
+
+            Assert.True(_client.Subscriber.Output.Count == 2);
+            Assert.True(_client.Subscriber.Output[0] == "ConnectAsync(key1, ): OK");
+            Assert.True(_client.Subscriber.Output[1] == "SendCommandAsync(key2, {\"p\":\"v\"}): OK");
+        }
+
+        [Fact]
+        public void ReceiveConfigKeys()
+        {
+            using var _client = CreateClient();
+            _client.Subscriber.SetReceiveScenario("Receive config keys []");
+
+            Assert.True(_client.Subscriber.Output.Count == 2);
+            Assert.True(_client.Subscriber.Output[0] == "ConnectAsync(key1, ): OK");
+            Assert.True(_client.Subscriber.Output[1] == "SendCommandAsync(key2, {\"p\":\"v\"}): OK");
         }
 
         #endregion
