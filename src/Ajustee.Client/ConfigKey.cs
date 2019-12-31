@@ -1,6 +1,4 @@
 ﻿
-using System.ComponentModel;
-
 namespace Ajustee
 {
     public class ConfigKey

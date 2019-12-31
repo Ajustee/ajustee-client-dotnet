@@ -70,6 +70,10 @@ namespace Ajustee
                         {
                             throw;
                         }
+                        catch (TaskCanceledException)
+                        {
+                            throw;
+                        }
                         catch (Exception _ex)
                         {
                             Debug.WriteLine($"Occured error: {_ex.Message}");

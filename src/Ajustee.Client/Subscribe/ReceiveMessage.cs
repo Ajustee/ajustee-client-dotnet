@@ -84,7 +84,11 @@ namespace Ajustee
 
         public override void Write(Utf8JsonWriter writer, ReceiveMessage value, JsonSerializerOptions options)
         {
-            throw new NotImplementedException();
+            writer.WriteStartObject();
+            writer.WriteString("action", value.Action);
+            writer.WritePropertyName("data");
+            JsonSerializer.Serialize(writer, value.Data, options: options);
+            writer.WriteEndObject();
         }
 #endif
 
@@ -128,7 +132,12 @@ namespace Ajustee
 
         public override void WriteJson(JsonWriter writer, ReceiveMessage value, JsonSerializer serializer)
         {
-            throw new NotImplementedException();
+            writer.WriteStartObject();
+            writer.WritePropertyName("action");
+            writer.WriteValue(value.Action);
+            writer.WritePropertyName("data");
+            serializer.Serialize(writer, value.Data);
+            writer.WriteEndObject();
         }
 #endif
     }

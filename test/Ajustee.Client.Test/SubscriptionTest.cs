@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 using static Ajustee.Helper;
 
@@ -9,6 +10,7 @@ using Xunit;
 #elif NUNIT
 using NUnit.Framework;
 using Fact = NUnit.Framework.TestAttribute;
+using InlineData = NUnit.Framework.TestCaseAttribute;
 #endif
 
 namespace Ajustee
@@ -71,15 +73,21 @@ namespace Ajustee
             Assert.True(_client.Subscriber.Output[1] == "SendCommandAsync(key2, {\"p\":\"v\"}): OK");
         }
 
-        [Fact]
-        public void ReceiveConfigKeys()
+        [Theory]
+        [InlineData(@"Receive config keys [{""path"":""p1"",""datatype"":""integer"",""value"":""v1""}] after 10 ms", ReceiveMessage.ConfigKeys, @"[{""Path"":""p1"",""DataType"":""Integer"",""Value"":""v1""}]")]
+        [InlineData(@"Receive info connectionid after 10 ms", ReceiveMessage.Info, "connectionid")]
+        [InlineData(@"Receive reset after 10 ms", ReceiveMessage.Reset, null)]
+        public async Task ReceiveValidMessage(string scenario, string expectReceiveAction, string expectReceiveData)
         {
             using var _client = CreateClient();
-            _client.Subscriber.SetReceiveScenario("Receive config keys []");
+            _client.SetReceiveScenario(scenario);
+            _client.Subscribe("key");
+
+            await _client.Subscriber.WaitReceiveScenario();
 
             Assert.True(_client.Subscriber.Output.Count == 2);
-            Assert.True(_client.Subscriber.Output[0] == "ConnectAsync(key1, ): OK");
-            Assert.True(_client.Subscriber.Output[1] == "SendCommandAsync(key2, {\"p\":\"v\"}): OK");
+            Assert.True(_client.Subscriber.Output[0] == "ConnectAsync(key, ): OK");
+            Assert.True(_client.Subscriber.Output[1] == $@"OnReceiveMessage({expectReceiveAction}, {expectReceiveData}): OK");
         }
 
         #endregion
