@@ -69,7 +69,7 @@ namespace Ajustee
                         catch (ConnectionClosedException)
                         {
                             throw;
-                        }
+                        } 
                         catch (TaskCanceledException)
                         {
                             throw;
@@ -121,7 +121,7 @@ namespace Ajustee
             {
                 if (!m_Initialized)
                 {
-                    InitializAndConnect(path, properties).Wait();
+                    InitializAndConnect(path, properties).GetAwaiter().GetResult();
                     _initalConnected = true;
                 }
             }
@@ -132,7 +132,7 @@ namespace Ajustee
 
             // Sents subscribe command for next subscriptions.
             if (!_initalConnected)
-                SendCommandAsync(new WsSubscribeCommand(Settings, path, properties), m_CancellationTokenSource.Token).Wait();
+                SendCommandAsync(new WsSubscribeCommand(Settings, path, properties), m_CancellationTokenSource.Token).GetAwaiter().GetResult();
         }
 
         public async Task SubscribeAsync(string path, IDictionary<string, string> properties)

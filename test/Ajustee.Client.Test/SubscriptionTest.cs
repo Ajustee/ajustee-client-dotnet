@@ -17,7 +17,6 @@ namespace Ajustee
 {
     public class SubscriptionTest
     {
-
         #region Private methods region
 
         private static FakeAjusteeClient CreateClient()
@@ -68,26 +67,48 @@ namespace Ajustee
             _client.Subscribe("key1");
             _client.Subscribe("key2", new Dictionary<string, string> { { "p", "v" } });
 
-            Assert.True(_client.Subscriber.Output.Count == 2);
-            Assert.True(_client.Subscriber.Output[0] == "ConnectAsync(key1, ): OK");
-            Assert.True(_client.Subscriber.Output[1] == "SendCommandAsync(key2, {\"p\":\"v\"}): OK");
+            Assert.True(_client.Output.Count == 2);
+            Assert.True(_client.Output[0] == "ConnectAsync(key1, ): OK");
+            Assert.True(_client.Output[1] == "SendCommandAsync_Subscribe(key2, {\"p\":\"v\"}): OK");
+        }
+
+        [Fact]
+        public async Task SubscribeAsyncInputs()
+        {
+            using var _client = CreateClient();
+            await _client.SubscribeAsync("key1");
+            await _client.SubscribeAsync("key2", new Dictionary<string, string> { { "p", "v" } });
+
+            Assert.True(_client.Output.Count == 2);
+            Assert.True(_client.Output[0] == "ConnectAsync(key1, ): OK");
+            Assert.True(_client.Output[1] == "SendCommandAsync_Subscribe(key2, {\"p\":\"v\"}): OK");
         }
 
         [Theory]
         [InlineData(@"Receive config keys [{""path"":""p1"",""datatype"":""integer"",""value"":""v1""}] after 10 ms", ReceiveMessage.ConfigKeys, @"[{""Path"":""p1"",""DataType"":""Integer"",""Value"":""v1""}]")]
-        [InlineData(@"Receive info connectionid after 10 ms", ReceiveMessage.Info, "connectionid")]
-        [InlineData(@"Receive reset after 10 ms", ReceiveMessage.Reset, null)]
+        [InlineData("Receive info connectionid after 10 ms", ReceiveMessage.Info, "connectionid")]
+        [InlineData("Receive reset after 10 ms", ReceiveMessage.Reset, null)]
         public async Task ReceiveValidMessage(string scenario, string expectReceiveAction, string expectReceiveData)
         {
             using var _client = CreateClient();
+            _client.SetSubscribeScenario(@"Subscribe success on key1 with { ""p1"": ""v1""} after 10 ms");
             _client.SetReceiveScenario(scenario);
-            _client.Subscribe("key");
 
-            await _client.Subscriber.WaitReceiveScenario();
+            await _client.WaitScenario();
 
-            Assert.True(_client.Subscriber.Output.Count == 2);
-            Assert.True(_client.Subscriber.Output[0] == "ConnectAsync(key, ): OK");
-            Assert.True(_client.Subscriber.Output[1] == $@"OnReceiveMessage({expectReceiveAction}, {expectReceiveData}): OK");
+            Assert.True(_client.Output.Count == 2);
+            Assert.True(_client.Output[0] == @"ConnectAsync(key1, {""p1"":""v1""}): OK");
+            Assert.True(_client.Output[1] == $@"OnReceiveMessage({expectReceiveAction}, {expectReceiveData}): OK");
+        }
+
+        [Theory]
+        [InlineData(@"Subscribe failed on key1 after 100 ms")]
+        [InlineData("Subscribe success on key1 after 50 ms", "Subscribe failed on key2 after 50 ms")]
+        public void SubscribeConnectFailed(params string[] scenario)
+        {
+            using var _client = CreateClient();
+            _client.SetSubscribeScenario(scenario);
+            Assert.Throws<Exception>(() => _client.WaitScenario().GetAwaiter().GetResult());
         }
 
         #endregion

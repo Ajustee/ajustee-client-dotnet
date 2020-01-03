@@ -12,24 +12,56 @@ namespace Ajustee
 {
     internal class FakeSubscriber : Subscriber
     {
-        public List<string> Output = new List<string>();
-        private Queue<string> m_ReceiveScenarioSteps = new Queue<string>();
-        private SemaphoreSlim m_ReceiveScenarioWaiter;
+        private readonly FakeAjusteeClient m_Client;
+        public Queue<string> SubscribeScenarioSteps = new Queue<string>();
+        public Queue<string> ReceiveScenarioSteps = new Queue<string>();
+        private Task SubscribeTask;
+        private SemaphoreSlim ReceiveScenarioWaiter = new SemaphoreSlim(0, 1);
+        private bool? m_CurrentSubscribeFailed;
 
-        public FakeSubscriber(AjusteeConnectionSettings settings, string[] receiveScenarioSteps)
+
+        public FakeSubscriber(AjusteeConnectionSettings settings, FakeAjusteeClient client)
             : base(settings)
         {
-            if (receiveScenarioSteps != null)
+            m_Client = client;
+        }
+
+        private async Task SubscribeScenarioImpl()
+        {
+            while (SubscribeScenarioSteps.Count > 0)
             {
-                foreach (var _step in receiveScenarioSteps) m_ReceiveScenarioSteps.Enqueue(_step);
-                m_ReceiveScenarioWaiter = new SemaphoreSlim(0, 1);
+                var _scenario = SubscribeScenarioSteps.Dequeue();
+
+                var _match = Regex.Match(_scenario, @"Subscribe\s+(?<result>failed|success)\s+on\s+(?<path>.+?)(?:\s+with\s+(?<props>.+?))?\s+after\s+(?<after>\d+)\s+ms", RegexOptions.IgnoreCase);
+                var _failed = _match.Groups["result"].Value == "failed";
+                if (!int.TryParse(_match.Groups["after"].Value, out var _delay)) _delay = 1;
+                var _path = _match.Groups["path"].Value;
+                var _propsGroup = _match.Groups["props"];
+                var _props = _propsGroup.Success ? JsonSerializer.Deserialize<IDictionary<string, string>>(_propsGroup.Value) : null;
+
+                await Task.Delay(_delay);
+                m_CurrentSubscribeFailed = _failed;
+                try
+                {
+                    await SubscribeAsync(_path, _props);
+                }
+                finally
+                {
+                    m_CurrentSubscribeFailed = null;
+                }
             }
         }
 
-        public async Task WaitReceiveScenario()
+        public async Task WaitScenario()
         {
-            if (m_ReceiveScenarioWaiter != null)
-                await m_ReceiveScenarioWaiter.WaitAsync();
+            var _waiters = new List<Task>(2);
+            if (SubscribeScenarioSteps.Count != 0)
+            {
+                SubscribeTask = Task.Run(SubscribeScenarioImpl);
+                _waiters.Add(SubscribeTask);
+            }
+            if (ReceiveScenarioWaiter != null) _waiters.Add(ReceiveScenarioWaiter.WaitAsync());
+            await Task.WhenAll(_waiters);
         }
 
         protected override async Task ConnectAsync(string path, IDictionary<string, string> properties, CancellationToken cancellationToken)
@@ -38,40 +70,64 @@ namespace Ajustee
             try
             {
                 await Task.Delay(1);
+                if (m_CurrentSubscribeFailed == true)
+                    throw new Exception("Connection failed");
+
                 _result += ": OK";
             }
             catch (Exception)
             {
                 _result += ": FAILED";
+                throw;
             }
             finally
             {
-                Output.Add(_result);
+                m_Client.Output.Add(_result);
             }
         }
 
-        protected override Task SendCommandAsync(WsCommand command, CancellationToken cancellationToken)
+        protected override async Task SendCommandAsync(WsCommand command, CancellationToken cancellationToken)
         {
-            switch (command)
+            var _result = $"{nameof(SendCommandAsync)}";
+            try
             {
-                case WsSubscribeCommand _subCommand:
-                    Output.Add($"{nameof(SendCommandAsync)}({_subCommand.Path}, {(_subCommand.Properties == null ? "" : JsonSerializer.Serialize(_subCommand.Properties))}): OK");
-                    break;
+                switch (command)
+                {
+                    case WsSubscribeCommand _subCommand:
+                        {
+                            _result += $"_Subscribe({_subCommand.Path}, {(_subCommand.Properties == null ? "" : JsonSerializer.Serialize(_subCommand.Properties))})";
+                            await Task.Delay(1);
+
+                            if (m_CurrentSubscribeFailed == true)
+                                throw new Exception("Send subscribe failed");
+
+                            _result += ": OK";
+                            break;
+                        }
+                }
             }
-            return Task.FromResult(0);
+            catch (Exception)
+            {
+                _result += ": FAILED";
+                throw;
+            }
+            finally
+            {
+                m_Client.Output.Add(_result);
+            }
         }
 
         protected override async Task ReceiveAsync(MemoryStream stream, CancellationToken cancellationToken)
         {
-            if (m_ReceiveScenarioSteps == null || m_ReceiveScenarioSteps.Count == 0)
+            if (ReceiveScenarioSteps == null || ReceiveScenarioSteps.Count == 0)
             {
-                m_ReceiveScenarioWaiter.Release();
+                ReceiveScenarioWaiter.Release();
                 throw new TaskCanceledException("Receive completed");
             }
 
-            while (m_ReceiveScenarioSteps.Count > 0)
+            while (ReceiveScenarioSteps.Count > 0)
             {
-                var _scenario = m_ReceiveScenarioSteps.Dequeue();
+                var _scenario = ReceiveScenarioSteps.Dequeue();
 
                 var _match = Regex.Match(_scenario, @"Receive\s+(?<type>config\skeys|info|reset)(?:\s+(?<data>.+?))?\s+after\s+(?<after>\d+)\s+ms", RegexOptions.IgnoreCase);
 
@@ -119,11 +175,11 @@ namespace Ajustee
                         _data = message.Data;
                         break;
                 }
-                Output.Add($"{nameof(OnReceiveMessage)}({message.Action}, {_data}): OK");
+                m_Client.Output.Add($"{nameof(OnReceiveMessage)}({message.Action}, {_data}): OK");
             }
             catch
             {
-                Output.Add($"{nameof(OnReceiveMessage)}({message.Action}): FAILED");
+                m_Client.Output.Add($"{nameof(OnReceiveMessage)}({message.Action}): FAILED");
             }
         }
     }

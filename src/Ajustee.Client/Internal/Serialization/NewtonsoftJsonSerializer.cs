@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Ajustee
 {
@@ -21,6 +22,7 @@ namespace Ajustee
             : base()
         {
             m_JsonOptions = new JsonSerializerSettings { DateFormatHandling = DateFormatHandling.IsoDateFormat };
+            m_JsonOptions.Converters.Add(new StringEnumConverter());
             m_Serializer = JsonSerializer.Create(m_JsonOptions);
         }
 
