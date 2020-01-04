@@ -68,8 +68,8 @@ namespace Ajustee
             _client.Subscribe("key2", new Dictionary<string, string> { { "p", "v" } });
 
             Assert.True(_client.Output.Count == 2);
-            Assert.True(_client.Output[0] == "ConnectAsync(key1, ): OK");
-            Assert.True(_client.Output[1] == "SendCommandAsync_Subscribe(key2, {\"p\":\"v\"}): OK");
+            Assert.True(_client.Output[0] == "Connect(key1, ): OK");
+            Assert.True(_client.Output[1] == "SendSubscribe(key2, {\"p\":\"v\"}): OK");
         }
 
         [Fact]
@@ -80,8 +80,8 @@ namespace Ajustee
             await _client.SubscribeAsync("key2", new Dictionary<string, string> { { "p", "v" } });
 
             Assert.True(_client.Output.Count == 2);
-            Assert.True(_client.Output[0] == "ConnectAsync(key1, ): OK");
-            Assert.True(_client.Output[1] == "SendCommandAsync_Subscribe(key2, {\"p\":\"v\"}): OK");
+            Assert.True(_client.Output[0] == "Connect(key1, ): OK");
+            Assert.True(_client.Output[1] == "SendSubscribe(key2, {\"p\":\"v\"}): OK");
         }
 
         [Theory]
@@ -97,8 +97,8 @@ namespace Ajustee
             await _client.WaitScenario();
 
             Assert.True(_client.Output.Count == 2);
-            Assert.True(_client.Output[0] == @"ConnectAsync(key1, {""p1"":""v1""}): OK");
-            Assert.True(_client.Output[1] == $@"OnReceiveMessage({expectReceiveAction}, {expectReceiveData}): OK");
+            Assert.True(_client.Output[0] == @"Connect(key1, {""p1"":""v1""}): OK");
+            Assert.True(_client.Output[1] == $@"Receive({expectReceiveAction}, {expectReceiveData}): OK");
         }
 
         [Theory]
@@ -109,6 +109,26 @@ namespace Ajustee
             using var _client = CreateClient();
             _client.SetSubscribeScenario(scenario);
             Assert.Throws<Exception>(() => _client.WaitScenario().GetAwaiter().GetResult());
+        }
+
+        [Fact]
+        public async Task ReceiveClosed()
+        {
+            using var _client = CreateClient();
+            _client.SetSubscribeScenario("Subscribe success on key1 after 10 ms");
+            _client.SetReceiveScenario(@"Receive config keys [{""path"":""key1"",""datatype"":""integer"",""value"":""value1""}] after 50 ms");
+            _client.SetReceiveScenario(@"Receive config keys [{""path"":""key2"",""datatype"":""integer"",""value"":""value2""}] after 50 ms");
+            _client.SetReceiveScenario(@"Receive failed after 50 ms");
+            _client.SetReceiveScenario(@"Receive closed after 50 ms");
+
+            await _client.WaitScenario();
+
+            Assert.True(_client.Output.Count == 5);
+            Assert.True(_client.Output[0] == @"Connect(key1, ): OK");
+            Assert.True(_client.Output[1] == $@"Receive({ReceiveMessage.ConfigKeys}, [{{""Path"":""key1"",""DataType"":""Integer"",""Value"":""value1""}}]): OK");
+            Assert.True(_client.Output[2] == $@"Receive({ReceiveMessage.ConfigKeys}, [{{""Path"":""key2"",""DataType"":""Integer"",""Value"":""value2""}}]): OK");
+            Assert.True(_client.Output[3] == @"Receive: FAILED");
+            Assert.True(_client.Output[4] == @"Receive: CLOSED");
         }
 
         #endregion

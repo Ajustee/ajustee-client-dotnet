@@ -19,7 +19,6 @@ namespace Ajustee
         private SemaphoreSlim ReceiveScenarioWaiter = new SemaphoreSlim(0, 1);
         private bool? m_CurrentSubscribeFailed;
 
-
         public FakeSubscriber(AjusteeConnectionSettings settings, FakeAjusteeClient client)
             : base(settings)
         {
@@ -66,7 +65,7 @@ namespace Ajustee
 
         protected override async Task ConnectAsync(string path, IDictionary<string, string> properties, CancellationToken cancellationToken)
         {
-            var _result = $"{nameof(ConnectAsync)}({path}, {(properties == null ? "" : JsonSerializer.Serialize(properties))})";
+            var _result = $"Connect({path}, {(properties == null ? "" : JsonSerializer.Serialize(properties))})";
             try
             {
                 await Task.Delay(1);
@@ -88,14 +87,14 @@ namespace Ajustee
 
         protected override async Task SendCommandAsync(WsCommand command, CancellationToken cancellationToken)
         {
-            var _result = $"{nameof(SendCommandAsync)}";
+            var _result = "Send";
             try
             {
                 switch (command)
                 {
                     case WsSubscribeCommand _subCommand:
                         {
-                            _result += $"_Subscribe({_subCommand.Path}, {(_subCommand.Properties == null ? "" : JsonSerializer.Serialize(_subCommand.Properties))})";
+                            _result += $"Subscribe({_subCommand.Path}, {(_subCommand.Properties == null ? "" : JsonSerializer.Serialize(_subCommand.Properties))})";
                             await Task.Delay(1);
 
                             if (m_CurrentSubscribeFailed == true)
@@ -125,39 +124,42 @@ namespace Ajustee
                 throw new TaskCanceledException("Receive completed");
             }
 
-            while (ReceiveScenarioSteps.Count > 0)
+            var _scenario = ReceiveScenarioSteps.Dequeue();
+
+            var _match = Regex.Match(_scenario, @"Receive\s+(?<type>config\skeys|info|reset|failed|closed)(?:\s+(?<data>.+?))?\s+after\s+(?<after>\d+)\s+ms", RegexOptions.IgnoreCase);
+
+            string _action = null;
+            object _data = null;
+            switch (_match.Groups["type"].Value.ToLowerInvariant())
             {
-                var _scenario = ReceiveScenarioSteps.Dequeue();
+                case "config keys":
+                    _action = ReceiveMessage.ConfigKeys;
+                    _data = JsonSerializer.Deserialize<IEnumerable<ConfigKey>>(_match.Groups["data"].Value);
+                    break;
 
-                var _match = Regex.Match(_scenario, @"Receive\s+(?<type>config\skeys|info|reset)(?:\s+(?<data>.+?))?\s+after\s+(?<after>\d+)\s+ms", RegexOptions.IgnoreCase);
+                case "info":
+                    _action = ReceiveMessage.Info;
+                    _data = _match.Groups["data"].Value;
+                    break;
 
-                string _action = null;
-                object _data = null;
-                switch (_match.Groups["type"].Value.ToLowerInvariant())
-                {
-                    case "config keys":
-                        _action = ReceiveMessage.ConfigKeys;
-                        _data = JsonSerializer.Deserialize<IEnumerable<ConfigKey>>(_match.Groups["data"].Value);
-                        break;
+                case "reset":
+                    _action = ReceiveMessage.Reset;
+                    _data = null;
+                    break;
 
-                    case "info":
-                        _action = ReceiveMessage.Info;
-                        _data = _match.Groups["data"].Value;
-                        break;
+                case "failed":
+                    m_Client.Output.Add($"Receive: FAILED");
+                    throw new Exception("Receive failed");
 
-                    case "reset":
-                        _action = ReceiveMessage.Reset;
-                        _data = null;
-                        break;
-                }
-
-                await Task.Delay(int.Parse(_match.Groups["after"].Value), cancellationToken);
-
-                var _receiveMessage = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new ReceiveMessage { Action = _action, Data = _data }));
-                stream.Write(_receiveMessage, 0, _receiveMessage.Length);
-
-                await Task.Yield();
+                case "closed":
+                    m_Client.Output.Add($"Receive: CLOSED");
+                    throw new ConnectionClosedException(true);
             }
+
+            await Task.Delay(int.Parse(_match.Groups["after"].Value), cancellationToken);
+
+            var _receiveMessage = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new ReceiveMessage { Action = _action, Data = _data }));
+            stream.Write(_receiveMessage, 0, _receiveMessage.Length);
         }
 
         protected override void OnReceiveMessage(ReceiveMessage message)
@@ -175,11 +177,11 @@ namespace Ajustee
                         _data = message.Data;
                         break;
                 }
-                m_Client.Output.Add($"{nameof(OnReceiveMessage)}({message.Action}, {_data}): OK");
+                m_Client.Output.Add($"Receive({message.Action}, {_data}): OK");
             }
             catch
             {
-                m_Client.Output.Add($"{nameof(OnReceiveMessage)}({message.Action}): FAILED");
+                m_Client.Output.Add($"Receive({message.Action}): FAILED");
             }
         }
     }

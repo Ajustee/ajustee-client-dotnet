@@ -35,6 +35,11 @@ namespace Ajustee
         /// </summary>
         public object TrackerId { get; set; }
 
+        /// <summary>
+        /// Gets or sets <see cref="System.Boolean"/> value that whether subscriber reconect on failure.
+        /// </summary>
+        public bool ReconnectSubscription { get; set; }
+
         #endregion
     }
 }
