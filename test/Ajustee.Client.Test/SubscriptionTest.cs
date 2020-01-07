@@ -19,12 +19,13 @@ namespace Ajustee
     {
         #region Private methods region
 
-        private static FakeAjusteeClient CreateClient()
+        private static FakeAjusteeClient CreateClient(bool reconnect = false)
         {
             return new FakeAjusteeClient(new AjusteeConnectionSettings
             {
                 ApiUrl = new Uri("http://test.com"),
                 ApplicationId = "test-app-id",
+                ReconnectSubscriptions = reconnect
             });
         }
 
@@ -102,7 +103,7 @@ namespace Ajustee
         }
 
         [Theory]
-        [InlineData(@"Subscribe failed on key1 after 100 ms")]
+        [InlineData("Subscribe failed on key1 after 100 ms")]
         [InlineData("Subscribe success on key1 after 50 ms", "Subscribe failed on key2 after 50 ms")]
         public void SubscribeConnectFailed(params string[] scenario)
         {
@@ -112,23 +113,26 @@ namespace Ajustee
         }
 
         [Fact]
-        public async Task ReceiveClosed()
+        public async Task ReceiveClosedAndReconnect()
         {
-            using var _client = CreateClient();
+            using var _client = CreateClient(reconnect: true);
             _client.SetSubscribeScenario("Subscribe success on key1 after 10 ms");
             _client.SetReceiveScenario(@"Receive config keys [{""path"":""key1"",""datatype"":""integer"",""value"":""value1""}] after 50 ms");
             _client.SetReceiveScenario(@"Receive config keys [{""path"":""key2"",""datatype"":""integer"",""value"":""value2""}] after 50 ms");
-            _client.SetReceiveScenario(@"Receive failed after 50 ms");
-            _client.SetReceiveScenario(@"Receive closed after 50 ms");
+            _client.SetReceiveScenario("Receive failed after 50 ms");
+            _client.SetReceiveScenario("Receive closed after 50 ms");
+            _client.SetReceiveScenario(@"Receive config keys [{""path"":""key3"",""datatype"":""integer"",""value"":""value3""}] after 50 ms");
 
             await _client.WaitScenario();
 
-            Assert.True(_client.Output.Count == 5);
-            Assert.True(_client.Output[0] == @"Connect(key1, ): OK");
+            Assert.True(_client.Output.Count == 7);
+            Assert.True(_client.Output[0] == "Connect(key1, ): OK");
             Assert.True(_client.Output[1] == $@"Receive({ReceiveMessage.ConfigKeys}, [{{""Path"":""key1"",""DataType"":""Integer"",""Value"":""value1""}}]): OK");
             Assert.True(_client.Output[2] == $@"Receive({ReceiveMessage.ConfigKeys}, [{{""Path"":""key2"",""DataType"":""Integer"",""Value"":""value2""}}]): OK");
-            Assert.True(_client.Output[3] == @"Receive: FAILED");
-            Assert.True(_client.Output[4] == @"Receive: CLOSED");
+            Assert.True(_client.Output[3] == "Receive: FAILED");
+            Assert.True(_client.Output[4] == "Receive: CLOSED");
+            Assert.True(_client.Output[5] == "Connect(key1, ): OK");
+            Assert.True(_client.Output[6] == $@"Receive({ReceiveMessage.ConfigKeys}, [{{""Path"":""key3"",""DataType"":""Integer"",""Value"":""value3""}}]): OK");
         }
 
         #endregion

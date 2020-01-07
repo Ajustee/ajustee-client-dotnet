@@ -23,6 +23,7 @@ namespace Ajustee
             : base(settings)
         {
             m_Client = client;
+            ReconnectInitDelay = 1000;
         }
 
         private async Task SubscribeScenarioImpl()

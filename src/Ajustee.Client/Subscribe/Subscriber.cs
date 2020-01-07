@@ -13,12 +13,11 @@ namespace Ajustee
     {
         #region Private fields region
 
-        private const int m_ReconnectDelay = 30_000; // 30 seconds
         private const int m_RECEIVE_STATE_NONE = 0;
-        private const int m_RECEIVE_STATE_ACTIVE = 0;
+        private const int m_RECEIVE_STATE_ACTIVE = 1;
 
         private readonly SemaphoreSlim m_SyncRoot = new SemaphoreSlim(1, 1);
-        private CancellationTokenSource m_CancellationTokenSource;
+        private CancellationTokenSource m_CancellationTokenSource = new CancellationTokenSource();
         private bool m_Initialized;
         private List<KeyValuePair<string, IDictionary<string, string>>> m_Subscribed;
         private int m_ReceiveState = m_RECEIVE_STATE_NONE;
@@ -33,15 +32,11 @@ namespace Ajustee
             ValidateProperties(properties);
             ValidateProperties(Settings.DefaultProperties);
 
-            // Initializes cancellation token source.
-            m_CancellationTokenSource = new CancellationTokenSource();
-
             // Connects the web socket.
             var _connectTask = ConnectAsync(path, properties, m_CancellationTokenSource.Token);
 
             // Registers recieve method in web socket.
-            var _awaiter = _connectTask.ConfigureAwait(false).GetAwaiter();
-            _awaiter.OnCompleted(ReceiveImpl);
+            _connectTask.ContinueWith(ReceiveImpl, TaskContinuationOptions.OnlyOnRanToCompletion | TaskContinuationOptions.LongRunning);
 
             // Sets initialized state.
             m_Initialized = true;
@@ -49,7 +44,7 @@ namespace Ajustee
             return _connectTask;
         }
 
-        private void ReceiveImpl()
+        private void ReceiveImpl(Task _)
         {
             if (Interlocked.CompareExchange(ref m_ReceiveState, m_RECEIVE_STATE_ACTIVE, m_RECEIVE_STATE_NONE) != m_RECEIVE_STATE_NONE)
                 return;
@@ -58,18 +53,24 @@ namespace Ajustee
 
             Task.Run(async () =>
             {
+                var _reconnectCounter = 0;
                 var _reconnect = false;
                 do
                 {
                     try
                     {
-                        // try reconnect if requires.
+                        // Try reconnect if requires.
                         if (_reconnect)
                         {
                             // Delay before reconnect.
-                            await Task.Delay(m_ReconnectDelay, _cancellationToken);
+                            // Delay time will increase till 5 minutes of end.
+                            // Used fot this following formula: initial * (log(counter, increase_factor) + 1) => maximum is 5 minutes, initial is 30 seconds.
+                            var _delay = (int)(ReconnectInitDelay * (Math.Log(++_reconnectCounter, 10.88632d) + 1));
+                            Debug.WriteLine($"Reconnects after {_delay / 1000} seconds");
+                            await Task.Delay(_delay, _cancellationToken);
 
                             // Reconnect the all subscriptions.
+                            Debug.WriteLine("Reconnecting");
                             await Reconnect(_cancellationToken);
                         }
 
@@ -118,7 +119,7 @@ namespace Ajustee
                         _reconnect = false;
                     }
                 }
-                while (_reconnect);
+                while (_reconnect && !_cancellationToken.IsCancellationRequested);
             }, _cancellationToken);
         }
 
@@ -129,21 +130,60 @@ namespace Ajustee
             m_Subscribed.Add(new KeyValuePair<string, IDictionary<string, string>>(path, properties));
         }
 
+        public void SubscribeInternal(string path, IDictionary<string, string> properties)
+        {
+            var _initalConnected = false;
+            if (!m_Initialized)
+            {
+                InitializAndConnect(path, properties).GetAwaiter().GetResult();
+                SetSubscribed(path, properties);
+                _initalConnected = true;
+            }
+
+            // Sents subscribe command for next subscriptions.
+            if (!_initalConnected)
+            {
+                SendCommandAsync(new WsSubscribeCommand(Settings, path, properties), m_CancellationTokenSource.Token).GetAwaiter().GetResult();
+                SetSubscribed(path, properties);
+            }
+        }
+
+        public async Task SubscribeAsyncInternal(string path, IDictionary<string, string> properties)
+        {
+            var _initalConnected = false;
+            if (!m_Initialized)
+            {
+                await InitializAndConnect(path, properties);
+                SetSubscribed(path, properties);
+                _initalConnected = true;
+            }
+
+            // Sents subscribe command for next subscriptions.
+            if (!_initalConnected)
+            {
+                await SendCommandAsync(new WsSubscribeCommand(Settings, path, properties), m_CancellationTokenSource.Token);
+                SetSubscribed(path, properties);
+            }
+        }
+
         private async Task Reconnect(CancellationToken cancellationToken)
         {
-            m_SyncRoot.Wait();
+            await m_SyncRoot.WaitAsync(m_CancellationTokenSource.Token);
             var _subscribed = m_Subscribed;
+            var _initialized = m_Initialized;
             try
             {
                 // Reset internals before reconnect.
+                m_Initialized = false;
                 m_Subscribed = null;
 
                 foreach (var _item in _subscribed)
-                    await SubscribeAsync(_item.Key, _item.Value);
+                    await SubscribeAsyncInternal(_item.Key, _item.Value);
             }
             catch
             {
                 // Restore internals.
+                m_Initialized = _initialized;
                 m_Subscribed = _subscribed;
             }
             finally
@@ -168,64 +208,42 @@ namespace Ajustee
 
         public void Subscribe(string path, IDictionary<string, string> properties)
         {
-            var _initalConnected = false;
-            m_SyncRoot.Wait();
+            m_SyncRoot.Wait(m_CancellationTokenSource.Token);
             try
             {
-                if (!m_Initialized)
-                {
-                    InitializAndConnect(path, properties).GetAwaiter().GetResult();
-                    SetSubscribed(path, properties);
-                    _initalConnected = true;
-                }
+                SubscribeInternal(path, properties);
             }
             finally
             {
                 m_SyncRoot.Release();
-            }
-
-            // Sents subscribe command for next subscriptions.
-            if (!_initalConnected)
-            {
-                SendCommandAsync(new WsSubscribeCommand(Settings, path, properties), m_CancellationTokenSource.Token).GetAwaiter().GetResult();
-                SetSubscribed(path, properties);
             }
         }
 
         public async Task SubscribeAsync(string path, IDictionary<string, string> properties)
         {
-            var _initalConnected = false;
-            await m_SyncRoot.WaitAsync();
+            await m_SyncRoot.WaitAsync(m_CancellationTokenSource.Token);
             try
             {
-                if (!m_Initialized)
-                {
-                    await InitializAndConnect(path, properties);
-                    SetSubscribed(path, properties);
-                    _initalConnected = true;
-                }
+                await SubscribeAsyncInternal(path, properties);
             }
             finally
             {
                 m_SyncRoot.Release();
             }
-
-            // Sents subscribe command for next subscriptions.
-            if (!_initalConnected)
-            {
-                await SendCommandAsync(new WsSubscribeCommand(Settings, path, properties), m_CancellationTokenSource.Token);
-                SetSubscribed(path, properties);
-            }
         }
 
         public virtual void Dispose()
-        { }
+        {
+            if (m_CancellationTokenSource != null)
+                m_CancellationTokenSource.Cancel();
+        }
 
         #endregion
 
         #region Protected fields region
 
         protected readonly AjusteeConnectionSettings Settings;
+        protected int ReconnectInitDelay = 30_000; // 30 seconds
 
         #endregion
 

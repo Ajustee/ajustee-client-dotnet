@@ -50,17 +50,22 @@ namespace Ajustee
 
         #region Protected methods region
 
-        protected override Task ConnectAsync(string path, IDictionary<string, string> properties, CancellationToken cancellationToken)
+        protected override async Task ConnectAsync(string path, IDictionary<string, string> properties, CancellationToken cancellationToken)
         {
             // Creates web socket.
-            m_WebSocket = new ClientWebSocket();
-            m_WebSocket.Options.SetRequestHeader(AppIdName, Settings.ApplicationId);
-            m_WebSocket.Options.SetRequestHeader(KeyPathName, path);
+            var _webSocket = new ClientWebSocket();
+            _webSocket.Options.SetRequestHeader(AppIdName, Settings.ApplicationId);
+            _webSocket.Options.SetRequestHeader(KeyPathName, path);
             if (properties != null)
-                m_WebSocket.Options.SetRequestHeader(KeyPropsName, JsonSerializer.Serialize(properties));
+                _webSocket.Options.SetRequestHeader(KeyPropsName, JsonSerializer.Serialize(properties));
 
             // Connects the web socket.
-            return m_WebSocket.ConnectAsync(GetSubscribeUrl(Settings.ApiUrl), cancellationToken);
+            await _webSocket.ConnectAsync(GetSubscribeUrl(Settings.ApiUrl), cancellationToken).ConfigureAwait(true);
+
+            // Try to dispose previous websocket.
+            if (m_WebSocket != null) _webSocket.Dispose();
+
+            m_WebSocket = _webSocket;
         }
 
         protected override Task SendCommandAsync(WsCommand command, CancellationToken cancellationToken)

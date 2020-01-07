@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!--<TargetFrameworks>net45</TargetFrameworks>-->
-    <TargetFrameworks>netcoreapp3.0;netcoreapp2.2;netcoreapp2.1;net461;net46;net45;net40</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.0</TargetFrameworks>
+    <!--<TargetFrameworks>netcoreapp3.0;netcoreapp2.2;netcoreapp2.1;net461;net46;net45;net40</TargetFrameworks>-->
     <IsPackable>false</IsPackable>
     <TestType Condition="'$(TargetFramework)' == 'net40' OR '$(TargetFramework)' == 'net45'">NUNIT</TestType>
     <TestType Condition="'$(TestType)' == ''">XUNIT</TestType>
