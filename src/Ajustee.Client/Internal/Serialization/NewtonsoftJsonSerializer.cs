@@ -21,7 +21,7 @@ namespace Ajustee
         public NewtonsoftJsonSerializer()
             : base()
         {
-            m_JsonOptions = new JsonSerializerSettings { DateFormatHandling = DateFormatHandling.IsoDateFormat };
+            m_JsonOptions = new JsonSerializerSettings { DateFormatHandling = DateFormatHandling.IsoDateFormat, NullValueHandling = NullValueHandling.Ignore };
             m_JsonOptions.Converters.Add(new StringEnumConverter());
             m_Serializer = JsonSerializer.Create(m_JsonOptions);
         }

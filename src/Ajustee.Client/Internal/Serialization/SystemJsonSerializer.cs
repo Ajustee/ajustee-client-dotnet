@@ -21,7 +21,7 @@ namespace Ajustee
         public SystemJsonSerializer()
             : base()
         {
-            m_JsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            m_JsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, IgnoreNullValues = true };
             m_JsonOptions.Converters.Add(new JsonStringEnumConverter());
         }
 

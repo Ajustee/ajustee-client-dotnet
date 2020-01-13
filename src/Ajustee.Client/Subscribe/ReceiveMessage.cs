@@ -25,7 +25,7 @@ namespace Ajustee
 
         #region Public properties region
 
-        public string Action { get; set; }
+        public string Type { get; set; }
 
         public object Data { get; set; }
 
@@ -38,7 +38,7 @@ namespace Ajustee
         public override ReceiveMessage Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             string _property = null;
-            string _action = null;
+            string _type = null;
             object _data = null;
 
             while (reader.Read())
@@ -55,12 +55,12 @@ namespace Ajustee
                         {
                             switch (_property)
                             {
-                                case "action":
-                                    _action = reader.GetString().ToLowerInvariant();
+                                case "type":
+                                    _type = reader.GetString().ToLowerInvariant();
                                     break;
 
                                 case "data":
-                                    switch (_action)
+                                    switch (_type)
                                     {
                                         case ReceiveMessage.ConfigKeys:
                                             _data = JsonSerializer.Deserialize<IEnumerable<ConfigKey>>(ref reader, options);
@@ -79,13 +79,13 @@ namespace Ajustee
                 }
             }
 
-            return new ReceiveMessage { Action = _action, Data = _data };
+            return new ReceiveMessage { Type = _type, Data = _data };
         }
 
         public override void Write(Utf8JsonWriter writer, ReceiveMessage value, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
-            writer.WriteString("action", value.Action);
+            writer.WriteString("type", value.Type);
             writer.WritePropertyName("data");
             JsonSerializer.Serialize(writer, value.Data, options: options);
             writer.WriteEndObject();
@@ -95,7 +95,7 @@ namespace Ajustee
 #if NJSON
         public override ReceiveMessage ReadJson(JsonReader reader, Type objectType, ReceiveMessage existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
-            string _action = null;
+            string _type = null;
             object _data = null;
 
             while (reader.Read())
@@ -105,12 +105,12 @@ namespace Ajustee
                     case JsonToken.PropertyName:
                         switch (reader.Path.ToLowerInvariant())
                         {
-                            case "action":
-                                _action = reader.ReadAsString().ToLowerInvariant();
+                            case "type":
+                                _type = reader.ReadAsString().ToLowerInvariant();
                                 break;
 
                             case "data":
-                                switch (_action)
+                                switch (_type)
                                 {
                                     case ReceiveMessage.ConfigKeys:
                                         if (reader.Read())
@@ -127,14 +127,14 @@ namespace Ajustee
                 }
             }
 
-            return new ReceiveMessage { Action = _action, Data = _data };
+            return new ReceiveMessage { Type = _type, Data = _data };
         }
 
         public override void WriteJson(JsonWriter writer, ReceiveMessage value, JsonSerializer serializer)
         {
             writer.WriteStartObject();
-            writer.WritePropertyName("action");
-            writer.WriteValue(value.Action);
+            writer.WritePropertyName("type");
+            writer.WriteValue(value.Type);
             writer.WritePropertyName("data");
             serializer.Serialize(writer, value.Data);
             writer.WriteEndObject();

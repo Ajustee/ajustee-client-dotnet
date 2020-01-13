@@ -50,14 +50,11 @@ namespace Ajustee
 
         #region Protected methods region
 
-        protected override async Task ConnectAsync(string path, IDictionary<string, string> properties, CancellationToken cancellationToken)
+        protected override async Task ConnectAsync(CancellationToken cancellationToken)
         {
             // Creates web socket.
             var _webSocket = new ClientWebSocket();
             _webSocket.Options.SetRequestHeader(AppIdName, Settings.ApplicationId);
-            _webSocket.Options.SetRequestHeader(KeyPathName, path);
-            if (properties != null)
-                _webSocket.Options.SetRequestHeader(KeyPropsName, JsonSerializer.Serialize(properties));
 
             // Connects the web socket.
             await _webSocket.ConnectAsync(GetSubscribeUrl(Settings.ApiUrl), cancellationToken).ConfigureAwait(true);
@@ -93,7 +90,7 @@ namespace Ajustee
 
         protected override void OnReceiveMessage(ReceiveMessage message)
         {
-            switch (message.Action)
+            switch (message.Type)
             {
                 case ReceiveMessage.ConfigKeys:
                     {

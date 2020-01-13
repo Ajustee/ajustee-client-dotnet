@@ -12,10 +12,10 @@ namespace Ajustee
             Reconnect = reconnect;
         }
 
-        public ConnectionClosedException(bool reconnect, int errorCode)
-            : this(reconnect)
+        public ConnectionClosedException(bool reconnect, Exception innerException)
+            : base(innerException.Message, innerException)
         {
-            ErrorCode = errorCode;
+            Reconnect = reconnect;
         }
 
         #endregion

@@ -8,18 +8,11 @@ namespace Ajustee
 {
     internal abstract class WsCommand
     {
-        #region Private fields region
-
-        private string m_Action;
-        private object m_Data;
-
-        #endregion
-
         #region Public constructors region
 
         public WsCommand(string action)
         {
-            m_Action = action;
+            Action = action;
         }
 
         #endregion
@@ -28,14 +21,15 @@ namespace Ajustee
 
         public ArraySegment<byte> GetBinary()
         {
-            var _dataText = m_Data as string;
-            if (_dataText == null)
-                _dataText = "null";
-            else
-                _dataText = JsonSerializer.Serialize(m_Data);
-
-            return new ArraySegment<byte>(Encoding.UTF8.GetBytes($"{{\"action\":\"{m_Action}\",data:{_dataText}}}"));
+            return new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(this)));
         }
+
+        #endregion
+
+        #region Public properties region
+
+        public string Action { get; }
+        public object Data { get; private set; }
 
         #endregion
 
@@ -43,7 +37,7 @@ namespace Ajustee
 
         protected void SetData(object data)
         {
-            m_Data = data;
+            Data = data;
         }
 
         #endregion
@@ -51,23 +45,19 @@ namespace Ajustee
 
     internal sealed class WsSubscribeCommand : WsCommand
     {
+        public struct SubscribeData
+        {
+            public string Path { get; set; }
+            public IDictionary<string, string> Props { get; set; }
+        }
+
         #region Public constructors region
 
         public WsSubscribeCommand(AjusteeConnectionSettings settings, string path, IDictionary<string, string> properties)
             : base("subscribe")
         {
-            Path = path;
-            Properties = properties;
-            SetData($"{{\"{AppIdName}\":\"{settings.ApplicationId}\",\"{KeyPathName}\":\"{path}\",\"{KeyPropsName}:\"{(properties == null ? "null": JsonSerializer.Serialize(properties))}}}");
+            SetData(new SubscribeData { Path = path, Props = properties });
         }
-
-        #endregion
-
-        #region Public properties region
-
-        public string Path { get; }
-
-        public IDictionary<string, string> Properties { get; }
 
         #endregion
     }

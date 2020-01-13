@@ -26,14 +26,10 @@ namespace Ajustee
 
         #region Private methods region
 
-        private Task InitializAndConnect(string path, IDictionary<string, string> properties)
+        private Task InitializAsync()
         {
-            // Validate properties.
-            ValidateProperties(properties);
-            ValidateProperties(Settings.DefaultProperties);
-
             // Connects the web socket.
-            var _connectTask = ConnectAsync(path, properties, m_CancellationTokenSource.Token);
+            var _connectTask = ConnectAsync(m_CancellationTokenSource.Token);
 
             // Registers recieve method in web socket.
             _connectTask.ContinueWith(ReceiveImpl, TaskContinuationOptions.OnlyOnRanToCompletion | TaskContinuationOptions.LongRunning);
@@ -60,7 +56,7 @@ namespace Ajustee
                     try
                     {
                         // Try reconnect if requires.
-                        if (_reconnect)
+                        if (_reconnect && Settings.ReconnectSubscriptions)
                         {
                             // Delay before reconnect.
                             // Delay time will increase till 5 minutes of end.
@@ -132,38 +128,26 @@ namespace Ajustee
 
         public void SubscribeInternal(string path, IDictionary<string, string> properties)
         {
-            var _initalConnected = false;
+            // Validate properties.
+            ValidateProperties(properties);
+            ValidateProperties(Settings.DefaultProperties);
+
             if (!m_Initialized)
-            {
-                InitializAndConnect(path, properties).GetAwaiter().GetResult();
-                SetSubscribed(path, properties);
-                _initalConnected = true;
-            }
+                InitializAsync().GetAwaiter().GetResult();
 
             // Sents subscribe command for next subscriptions.
-            if (!_initalConnected)
-            {
-                SendCommandAsync(new WsSubscribeCommand(Settings, path, properties), m_CancellationTokenSource.Token).GetAwaiter().GetResult();
-                SetSubscribed(path, properties);
-            }
+            SendCommandAsync(new WsSubscribeCommand(Settings, path, properties), m_CancellationTokenSource.Token).GetAwaiter().GetResult();
+            SetSubscribed(path, properties);
         }
 
         public async Task SubscribeAsyncInternal(string path, IDictionary<string, string> properties)
         {
-            var _initalConnected = false;
             if (!m_Initialized)
-            {
-                await InitializAndConnect(path, properties);
-                SetSubscribed(path, properties);
-                _initalConnected = true;
-            }
+                await InitializAsync();
 
             // Sents subscribe command for next subscriptions.
-            if (!_initalConnected)
-            {
-                await SendCommandAsync(new WsSubscribeCommand(Settings, path, properties), m_CancellationTokenSource.Token);
-                SetSubscribed(path, properties);
-            }
+            await SendCommandAsync(new WsSubscribeCommand(Settings, path, properties), m_CancellationTokenSource.Token);
+            SetSubscribed(path, properties);
         }
 
         private async Task Reconnect(CancellationToken cancellationToken)
@@ -180,11 +164,14 @@ namespace Ajustee
                 foreach (var _item in _subscribed)
                     await SubscribeAsyncInternal(_item.Key, _item.Value);
             }
-            catch
+            catch (Exception _ex)
             {
                 // Restore internals.
                 m_Initialized = _initialized;
                 m_Subscribed = _subscribed;
+
+                // Throw connection closed exception to attemp reconnect again.
+                throw new ConnectionClosedException(true, _ex);
             }
             finally
             {
@@ -249,7 +236,7 @@ namespace Ajustee
 
         #region Protected methods region
 
-        protected abstract Task ConnectAsync(string path, IDictionary<string, string> properties, CancellationToken cancellationToken);
+        protected abstract Task ConnectAsync(CancellationToken cancellationToken);
 
         protected abstract Task SendCommandAsync(WsCommand command, CancellationToken cancellationToken);
 
