@@ -16,6 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Fleck" Version="1.1.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
   </ItemGroup>
 
@@ -36,11 +37,22 @@
     <PackageReference Include="NUnit3TestAdapter" Version="3.15.1" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net40'">
+  <ItemGroup Condition="'$(SupportSubscribe)' == 'False'">
     <Compile Remove="SubscriptionTest.cs" />
     <None Include="SubscriptionTest.cs" />
     <Compile Remove="Internal\FakeSubscriber.cs" />
     <None Include="Internal\FakeSubscriber.cs" />
+    <Compile Remove="Internal\FakeWebSocketServer.cs" />
+    <None Include="Internal\FakeWebSocketServer.cs" />
+    <Compile Remove="Internal\SubscriberManager.cs" />
+    <None Include="Internal\SubscriberManager.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(AsyncMode)' == 'False'">
+    <Compile Remove="Internal\Scenario.cs" />
+    <None Include="Internal\Scenario.cs" />
+    <Compile Remove="Internal\Trigger.cs" />
+    <None Include="Internal\Trigger.cs" />
   </ItemGroup>
 
 </Project>

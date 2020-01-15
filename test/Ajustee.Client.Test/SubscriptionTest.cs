@@ -30,7 +30,12 @@ namespace Ajustee
             };
         }
 
-        private static FakeAjusteeClient CreateClient(bool reconnect = false)
+        private static AjusteeClient CreateClient(bool reconnect = false)
+        {
+            return new AjusteeClient(CreateSettings(reconnect: reconnect));
+        }
+
+        private static FakeAjusteeClient CreateFakeClient(bool reconnect = false)
         {
             return new FakeAjusteeClient(CreateSettings(reconnect: reconnect));
         }
@@ -81,7 +86,7 @@ namespace Ajustee
         [Fact]
         public void SubscribeInputs()
         {
-            using var _client = CreateClient();
+            using var _client = CreateFakeClient();
             _client.Subscribe("key1");
             _client.Subscribe("key2", new Dictionary<string, string> { { "p", "v" } });
 
@@ -94,7 +99,7 @@ namespace Ajustee
         [Fact]
         public async Task SubscribeAsyncInputs()
         {
-            using var _client = CreateClient();
+            using var _client = CreateFakeClient();
             await _client.SubscribeAsync("key1");
             await _client.SubscribeAsync("key2", new Dictionary<string, string> { { "p", "v" } });
 
@@ -110,7 +115,7 @@ namespace Ajustee
         [InlineData("Receive reset after 10 ms", ReceiveMessage.Reset, null)]
         public async Task ReceiveValidMessage(string scenario, string expectReceiveAction, string expectReceiveData)
         {
-            using var _client = CreateClient();
+            using var _client = CreateFakeClient();
             _client.SetSubscribeScenario(@"Subscribe success on key1 with { ""p1"": ""v1""} after 10 ms");
             _client.SetReceiveScenario(scenario);
 
@@ -127,7 +132,7 @@ namespace Ajustee
         [InlineData("Subscribe success on key1 after 50 ms", "Subscribe failed on key2 after 50 ms")]
         public void SubscribeConnectFailed(params string[] scenario)
         {
-            using var _client = CreateClient();
+            using var _client = CreateFakeClient();
             _client.SetSubscribeScenario(scenario);
             Assert.Throws<Exception>(() => _client.WaitScenario().GetAwaiter().GetResult());
         }
@@ -135,7 +140,7 @@ namespace Ajustee
         [Fact]
         public async Task ReceiveClosedAndReconnect()
         {
-            using var _client = CreateClient(reconnect: true);
+            using var _client = CreateFakeClient(reconnect: true);
             _client.SetSubscribeScenario("Subscribe success on key1 after 10 ms");
             _client.SetSubscribeScenario("Subscribe success on key2 after 50 ms");
             _client.SetSubscribeScenario("Subscribe success on key3 after trigger1");
@@ -180,6 +185,19 @@ namespace Ajustee
             Assert.True(_client.Output[24] == "SendSubscribe(key1, ): OK");
             Assert.True(_client.Output[25] == "SendSubscribe(key2, ): OK");
             Assert.True(_client.Output[26] == "SendSubscribe(key3, ): OK");
+        }
+
+        [Fact]
+        public async Task Subscribe()
+        {
+            using var _manager = new SubscriberManager(CreateClient());
+            _manager.ServerScenario("1:Start server");
+            //_manager.ClientScenario("2:Subscribe success on key1 after 1");
+            //_manager.ServerScenario("3:Stop server after 2");
+            //_manager.ClientScenario("Wait 500 ms");
+
+            await _manager.Wait();
+
         }
 
         #endregion
