@@ -8,57 +8,45 @@ namespace Ajustee
 {
     internal abstract class WsCommand
     {
-        #region Public constructors region
+        public string action { get; }
+        public object data { get; private set; }
 
         public WsCommand(string action)
         {
-            Action = action;
+            this.action = action;
         }
-
-        #endregion
-
-        #region Public methods region
 
         public ArraySegment<byte> GetBinary()
         {
-            return new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(this)));
+            return new ArraySegment<byte>(MessageEncoding.GetBytes(JsonSerializer.Serialize(this)));
         }
-
-        #endregion
-
-        #region Public properties region
-
-        public string Action { get; }
-        public object Data { get; private set; }
-
-        #endregion
-
-        #region Protected methods region
 
         protected void SetData(object data)
         {
-            Data = data;
+            this.data = data;
         }
 
-        #endregion
+        public override string ToString()
+        {
+            return JsonSerializer.Serialize(this);
+        }
     }
 
     internal sealed class WsSubscribeCommand : WsCommand
     {
-        public struct SubscribeData
-        {
-            public string Path { get; set; }
-            public IDictionary<string, string> Props { get; set; }
-        }
-
-        #region Public constructors region
-
-        public WsSubscribeCommand(AjusteeConnectionSettings settings, string path, IDictionary<string, string> properties)
+        public WsSubscribeCommand(string path, IDictionary<string, string> properties)
             : base("subscribe")
         {
-            SetData(new SubscribeData { Path = path, Props = properties });
+            SetData(new { path, props = properties });
         }
+    }
 
-        #endregion
+    internal sealed class WsUnsubscribeCommand : WsCommand
+    {
+        public WsUnsubscribeCommand(string path)
+            : base("unsubscribe")
+        {
+            SetData(new { path });
+        }
     }
 }

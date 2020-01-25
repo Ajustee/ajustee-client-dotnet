@@ -7,19 +7,19 @@ namespace Ajustee
     {
         #region Private fields region
 
-        private Subscriber m_Subscriber;
+        private ISubscriber m_Subscriber;
         private readonly object m_SubscriberSyncRoot = new object();
 
         #endregion
 
         #region Private methods region
 
-        internal virtual Subscriber CreateSubscriber()
+        internal virtual ISubscriber CreateSubscriber()
         {
-            return new WebSocketSubscriber(Settings, keys => OnConfigKeyChanged(new AjusteeConfigKeyEventArgs(keys)));
+            return new Subscriber<WebSocketClient>(Settings, keys => OnConfigKeyChanged(new AjusteeConfigKeyEventArgs(keys)));
         }
 
-        private Subscriber EnsureSubscriber()
+        private ISubscriber EnsureSubscriber()
         {
             if (m_Subscriber == null)
             {

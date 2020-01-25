@@ -15,21 +15,37 @@ namespace Ajustee
     [JsonConverter(typeof(JsonReceiveMessageConverter))]
     internal struct ReceiveMessage
     {
-        #region Public fields region
-
-        public const string ConfigKeys = "configkeys";
-        public const string Info = "info";
-        public const string Reset = "reset";
-
-        #endregion
-
-        #region Public properties region
+        public const string ChangedType = "changed";
+        public const string SubscribeType = "subscribe";
+        public const string UnsubscribeType = "unsubscribe";
+        public const string DeletedType = "deleted";
 
         public string Type { get; set; }
-
         public object Data { get; set; }
 
-        #endregion
+        public static ReceiveMessage Subscribe(string path, ReceiveMessageStatusCode statusCode)
+        {
+            return new ReceiveMessage { Type = SubscribeType, Data = new SubscriptionMessageData { Path = path, StatusCode = statusCode } };
+        }
+
+        public override string ToString()
+        {
+            return base.ToString();
+        }
+    }
+
+    internal struct SubscriptionMessageData
+    {
+        public string Path { get; set; }
+        public ReceiveMessageStatusCode StatusCode { get; set; }
+    }
+
+    internal enum ReceiveMessageStatusCode
+    {
+        Success,
+        Not_Found_KeyPath,
+        Not_Found_App,
+        Already_Exists
     }
 
     internal class JsonReceiveMessageConverter : JsonConverter<ReceiveMessage>
@@ -51,6 +67,7 @@ namespace Ajustee
 
                     case JsonTokenType.String:
                     case JsonTokenType.StartArray:
+                    case JsonTokenType.StartObject:
                         if (_property != null)
                         {
                             switch (_property)
@@ -62,13 +79,19 @@ namespace Ajustee
                                 case "data":
                                     switch (_type)
                                     {
-                                        case ReceiveMessage.ConfigKeys:
+                                        case ReceiveMessage.ChangedType:
                                             _data = JsonSerializer.Deserialize<IEnumerable<ConfigKey>>(ref reader, options);
                                             _property = null;
                                             break;
 
-                                        case ReceiveMessage.Info:
-                                            _data = reader.GetString(); // ConnectionId
+                                        case ReceiveMessage.SubscribeType:
+                                        case ReceiveMessage.UnsubscribeType:
+                                            _data = JsonSerializer.Deserialize<SubscriptionMessageData>(ref reader, options);
+                                            _property = null;
+                                            break;
+
+                                        case ReceiveMessage.DeletedType:
+                                            _data = reader.GetString(); // Key path
                                             _property = null;
                                             break;
                                     }
@@ -112,13 +135,19 @@ namespace Ajustee
                             case "data":
                                 switch (_type)
                                 {
-                                    case ReceiveMessage.ConfigKeys:
+                                    case ReceiveMessage.ChangedType:
                                         if (reader.Read())
                                             _data = serializer.Deserialize<IEnumerable<ConfigKey>>(reader);
                                         break;
 
-                                    case ReceiveMessage.Info:
-                                        _data = reader.ReadAsString();
+                                    case ReceiveMessage.SubscribeType:
+                                    case ReceiveMessage.UnsubscribeType:
+                                        if (reader.Read())
+                                            _data = serializer.Deserialize<SubscriptionMessageData>(reader);
+                                        break;
+
+                                    case ReceiveMessage.DeletedType:
+                                        _data = reader.ReadAsString(); // Key path
                                         break;
                                 }
                                 break;

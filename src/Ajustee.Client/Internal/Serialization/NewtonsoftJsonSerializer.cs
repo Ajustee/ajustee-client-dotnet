@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Text;
 
 using Newtonsoft.Json;
@@ -45,14 +44,14 @@ namespace Ajustee
 
         public T Deserialize<T>(Stream jsonStream)
         {
-            using var _jsonReader = new JsonTextReader(new StreamReader(jsonStream, Encoding.UTF8));
+            using var _jsonReader = new JsonTextReader(new StreamReader(jsonStream, Helper.MessageEncoding));
             return m_Serializer.Deserialize<T>(_jsonReader);
         }
 
 #if ASYNC
         public async System.Threading.Tasks.Task<T> DeserializeAsync<T>(Stream jsonStream, System.Threading.CancellationToken cancellationToken = default)
         {
-            using var _jsonReader = new JsonTextReader(new StreamReader(jsonStream, Encoding.UTF8));
+            using var _jsonReader = new JsonTextReader(new StreamReader(jsonStream, Helper.MessageEncoding));
             return await System.Threading.Tasks.Task.FromResult(m_Serializer.Deserialize<T>(_jsonReader));
         }
 #endif

@@ -2,14 +2,17 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 
 using static Ajustee.Helper;
+using ReceiveCallbackHandler = System.Action<System.Collections.Generic.IEnumerable<Ajustee.ConfigKey>>;
 
 namespace Ajustee
 {
-    internal abstract class Subscriber : IDisposable
+    internal class Subscriber<TSocketClient> : ISubscriber
+        where TSocketClient : IWebSocketClient, new()
     {
         #region Private fields region
 
@@ -21,6 +24,9 @@ namespace Ajustee
         private bool m_Initialized;
         private List<KeyValuePair<string, IDictionary<string, string>>> m_Subscribed;
         private int m_ReceiveState = m_RECEIVE_STATE_NONE;
+        private const int m_BufferSize = 4096;
+        private readonly ReceiveCallbackHandler m_ReceiveCallback;
+        private TSocketClient m_Client;
 
         #endregion
 
@@ -76,14 +82,15 @@ namespace Ajustee
                             try
                             {
                                 // Received respose from source.
-                                await ReceiveAsync(_memory, _cancellationToken);
+                                if (await ReceiveAsync(_memory, _cancellationToken))
+                                {
+                                    // Gets received message.
+                                    _memory.Seek(0, SeekOrigin.Begin);
+                                    var _message = JsonSerializer.Deserialize<ReceiveMessage>(_memory);
 
-                                // Gets received message.
-                                _memory.Seek(0, SeekOrigin.Begin);
-                                var _message = JsonSerializer.Deserialize<ReceiveMessage>(_memory);
-
-                                // Invokes implementation of after receive message.
-                                OnReceiveMessage(_message);
+                                    // Invokes implementation of after receive message.
+                                    OnReceiveMessage(_message);
+                                }
                             }
                             catch (ConnectionClosedException)
                             {
@@ -136,7 +143,7 @@ namespace Ajustee
                 InitializAsync().GetAwaiter().GetResult();
 
             // Sents subscribe command for next subscriptions.
-            SendCommandAsync(new WsSubscribeCommand(Settings, path, properties), m_CancellationTokenSource.Token).GetAwaiter().GetResult();
+            SendCommandAsync(new WsSubscribeCommand(path, properties), m_CancellationTokenSource.Token).GetAwaiter().GetResult();
             SetSubscribed(path, properties);
         }
 
@@ -146,7 +153,7 @@ namespace Ajustee
                 await InitializAsync();
 
             // Sents subscribe command for next subscriptions.
-            await SendCommandAsync(new WsSubscribeCommand(Settings, path, properties), m_CancellationTokenSource.Token);
+            await SendCommandAsync(new WsSubscribeCommand(path, properties), m_CancellationTokenSource.Token);
             SetSubscribed(path, properties);
         }
 
@@ -183,10 +190,11 @@ namespace Ajustee
 
         #region Public constructors region
 
-        public Subscriber(AjusteeConnectionSettings settings)
+        public Subscriber(AjusteeConnectionSettings settings, ReceiveCallbackHandler receiveCallback)
             : base()
         {
             Settings = settings;
+            m_ReceiveCallback = receiveCallback;
         }
 
         #endregion
@@ -219,10 +227,19 @@ namespace Ajustee
             }
         }
 
-        public virtual void Dispose()
+        public void Dispose()
         {
             if (m_CancellationTokenSource != null)
                 m_CancellationTokenSource.Cancel();
+
+            lock (this)
+            {
+                if (m_Client != null)
+                {
+                    m_Client.Dispose();
+                    m_Client = default(TSocketClient);
+                }
+            }
         }
 
         #endregion
@@ -236,13 +253,69 @@ namespace Ajustee
 
         #region Protected methods region
 
-        protected abstract Task ConnectAsync(CancellationToken cancellationToken);
+        protected async Task ConnectAsync(CancellationToken cancellationToken)
+        {
+            // Creates socket client.
+            var _client = new TSocketClient();
+            _client.SetRequestHeader(AppIdName, Settings.ApplicationId);
 
-        protected abstract Task SendCommandAsync(WsCommand command, CancellationToken cancellationToken);
+            // Connects the web socket.
+            await _client.ConnectAsync(GetSubscribeUrl(Settings.ApiUrl), cancellationToken).ConfigureAwait(true);
 
-        protected abstract Task ReceiveAsync(MemoryStream stream, CancellationToken cancellationToken);
+            // Try to dispose previous websocket.
+            if (m_Client != null) m_Client.Dispose();
+            m_Client = _client;
 
-        protected abstract void OnReceiveMessage(ReceiveMessage message);
+            ATL.WriteLine("Subscriber connected");
+        }
+
+        protected async Task SendCommandAsync(WsCommand command, CancellationToken cancellationToken)
+        {
+            await m_Client.SendAsync(command.GetBinary(), WebSocketMessageType.Text, true, cancellationToken);
+
+            ATL.WriteLine("Subscriber send: {0}", command);
+        }
+
+        protected async Task<bool> ReceiveAsync(MemoryStream stream, CancellationToken cancellationToken)
+        {
+            var _buffer = new ArraySegment<byte>(new byte[m_BufferSize]);
+            WebSocketReceiveResult _result;
+            var _hasBytes = false;
+            do
+            {
+                _result = await m_Client.ReceiveAsync(_buffer, cancellationToken);
+                if (_result == null) return false;
+
+                // Check to close result.
+                if (_result.MessageType == WebSocketMessageType.Close)
+                    throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely, _result.CloseStatusDescription);
+
+                // Appends to the received data to the memory.
+                stream.Write(_buffer.Array, 0, _result.Count);
+
+                _hasBytes |= _result.Count > 0;
+            }
+            while (!_result.EndOfMessage);
+            return _hasBytes;
+        }
+
+        protected void OnReceiveMessage(ReceiveMessage message)
+        {
+            ATL.WriteLine("Subscriber received: {0}", message);
+
+            switch (message.Type)
+            {
+                case ReceiveMessage.ChangedType:
+                    {
+                        if (message.Data is IEnumerable<ConfigKey> _configKeys)
+                        {
+                            // Raises receive callback.
+                            m_ReceiveCallback(_configKeys);
+                        }
+                        break;
+                    }
+            }
+        }
 
         #endregion
     }

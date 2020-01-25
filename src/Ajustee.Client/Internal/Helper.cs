@@ -6,7 +6,7 @@ using System.Collections;
 using System.Reflection;
 using System.Linq.Expressions;
 using System.Collections.Concurrent;
-using System.Diagnostics;
+using System.Text;
 
 namespace Ajustee
 {
@@ -28,6 +28,7 @@ namespace Ajustee
         public const string KeyPropsName = "x-key-props";
         public const string TrackerIdName = "ajustee-tracker-id";
         public static readonly IJsonSerializer JsonSerializer = JsonSerializerFactory.Create();
+        public static readonly Encoding MessageEncoding = new UTF8Encoding(false);
 
         #endregion
 

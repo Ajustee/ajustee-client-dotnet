@@ -16,7 +16,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fleck" Version="1.1.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
   </ItemGroup>
 
@@ -38,14 +37,8 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(SupportSubscribe)' == 'False'">
-    <Compile Remove="SubscriptionTest.cs" />
-    <None Include="SubscriptionTest.cs" />
-    <Compile Remove="Internal\FakeSubscriber.cs" />
-    <None Include="Internal\FakeSubscriber.cs" />
-    <Compile Remove="Internal\FakeWebSocketServer.cs" />
-    <None Include="Internal\FakeWebSocketServer.cs" />
-    <Compile Remove="Internal\SubscriberManager.cs" />
-    <None Include="Internal\SubscriberManager.cs" />
+    <Compile Remove="Subscription\**\*.*" />
+    <None Include="Subscription\**\*.*" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(AsyncMode)' == 'False'">
@@ -53,6 +46,8 @@
     <None Include="Internal\Scenario.cs" />
     <Compile Remove="Internal\Trigger.cs" />
     <None Include="Internal\Trigger.cs" />
+    <Compile Remove="Internal\ScenarioManager.cs" />
+    <None Include="Internal\ScenarioManager.cs" />
   </ItemGroup>
 
 </Project>
