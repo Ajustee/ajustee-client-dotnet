@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,7 +37,7 @@ namespace Ajustee.Tools
         {
             lock (m_WriteSyncRoot)
             {
-                Console.WriteLine($"{value}");
+                Console.WriteLine(value);
                 Console.Write("> ");
             }
         }
@@ -50,7 +51,13 @@ namespace Ajustee.Tools
                     var _message = messageFilter(ReadLine());
 
                     if (_message is KeyValuePair<string, IDictionary<string, string>> _subsribe)
+                    {
                         await client.SubscribeAsync(_subsribe.Key, _subsribe.Value, cancellationToken: cancellationToken);
+                    }
+                    else if (_message is string _unsubsribe)
+                    {
+                        await client.UnsubscribeAsync(_unsubsribe, cancellationToken: cancellationToken);
+                    }
                 }
             }, cancellationToken);
         }
@@ -63,11 +70,15 @@ namespace Ajustee.Tools
         {
             Console.WriteLine("Ajustee web socket tools");
             Console.WriteLine();
+            ATL.Enabled = true;
+            Trace.Listeners.Add(new AtlConsoleTraceListener());
 
             while (true)
             {
-                Console.Write("Enter url: "); var _url = "wss://qlnzq5smse.execute-api.us-west-2.amazonaws.com/demo";//ReadLine(indend: false);
-                Console.Write("Enter app-id: "); var _appId = "112";// ReadLine();
+                var _url = "wss://90uik2l35c.execute-api.us-west-2.amazonaws.com/ws";
+                var _appId = "nLnoagp.mKQk1t2YEfs5RlrPbcXrjg~8";
+                //Console.Write("Enter url: "); _url = ReadLine(indend: false);
+                //Console.Write("Enter app-id: "); _appId = ReadLine();
 
                 var _cancellationTokenSource = new CancellationTokenSource();
                 try
@@ -89,7 +100,13 @@ namespace Ajustee.Tools
                             if (_keyPath == "exit") return null;
                             Console.Write("Enter properties: "); var _properties = ReadLine();
                             if (_properties == "exit") return null;
-                            return KeyValuePair.Create(_keyPath, JsonSerializer.Deserialize<IDictionary<string, string>>(_properties));
+                            return KeyValuePair.Create(_keyPath, string.IsNullOrWhiteSpace(_properties) ? null : JsonSerializer.Deserialize<IDictionary<string, string>>(_properties));
+                        }
+                        else if (string.Equals(m, "unsubscribe", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Console.Write("Enter key path: "); var _keyPath = ReadLine();
+                            if (_keyPath == "exit") return null;
+                            return _keyPath;
                         }
                         return null;
                     });
