@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using static Ajustee.Helper;
+using System.Net.WebSockets;
 
 namespace Ajustee
 {
@@ -42,10 +43,10 @@ namespace Ajustee
         }
     }
 
-    [Scenario(@"^(?:(?<release>\w+)\:)?Subscribe\s*(?:\s+after\s+(?:(?:(?<after>\d+)\s+ms)|(?<trigger>\w+)))?$")]
-    internal class SubscriberSubscribeScenario : Scenario
+    [Scenario(@"^\s*(?:(?<release>\w+)\s*\:\s*)?(?<method>Subscribe|Unsubscribe)\s*(?:\s+after\s+(?:(?:(?<after>\d+)\s+ms)|(?<trigger>\w+)))?\s*$")]
+    internal class SubscriberSubscriptionScenario : Scenario
     {
-        public SubscriberSubscribeScenario(Match match, object[] args) : base(match, args) { }
+        public SubscriberSubscriptionScenario(Match match, object[] args) : base(match, args) { }
 
         public override async Task Run(IDictionary<object, object> parameters)
         {
@@ -53,22 +54,38 @@ namespace Ajustee
             var _trigger = Match.Groups["trigger"].Value;
             await (string.IsNullOrEmpty(_trigger) ? Task.Delay(_delay) : ((Trigger)parameters[typeof(Trigger)]).WaitAsync(_trigger));
 
-            var _path = GetArg<string>(0);
-            var _props = GetArg<IDictionary<string, string>>(1);
+            var _client = ((IAjusteeClient)parameters[typeof(IAjusteeClient)]);
+            var _method = Match.Groups["method"].Value;
 
-            if (_props == null)
-                await ((IAjusteeClient)parameters[typeof(IAjusteeClient)]).SubscribeAsync(_path);
-            else
-                await ((IAjusteeClient)parameters[typeof(IAjusteeClient)]).SubscribeAsync(_path, _props);
+            switch (_method)
+            {
+                case "Subscribe":
+                    {
+                        var _path = GetArg<string>(0);
+                        var _props = GetArg<IDictionary<string, string>>(1);
+                        if (_props == null)
+                            await _client.SubscribeAsync(_path);
+                        else
+                            await _client.SubscribeAsync(_path, _props);
+                        break;
+                    }
+
+                case "Unsubscribe":
+                    {
+                        var _path = GetArg<string>(0);
+                        await _client.UnsubscribeAsync(_path);
+                        break;
+                    }
+            }
 
             ((Trigger)parameters[typeof(Trigger)]).Release(Match.Groups["release"].Value);
         }
     }
 
-    [Scenario(@"^(?:(?<release>\w+)\:)?Send\s*(?:\s+after\s+(?:(?:(?<after>\d+)\s+ms)|(?<trigger>\w+)))?$")]
-    internal class WebSocketSendScenario : Scenario
+    [Scenario(@"^\s*(?:(?<release>\w+)\s*\:\s*)?Send\s+(?<type>subscribe|unsubscribe|changed|deleted|closed\((?<ccode>10(?:00|01|02|03|05|07|08|09|10|11))\))(?:\s+after\s+(?:(?:(?<after>\d+)\s+ms)|(?<trigger>\w+)))?\s*$")]
+    internal class ServerSendScenario : Scenario
     {
-        public WebSocketSendScenario(Match match, object[] args) : base(match, args) { }
+        public ServerSendScenario(Match match, object[] args) : base(match, args) { }
 
         public override async Task Run(IDictionary<object, object> parameters)
         {
@@ -76,17 +93,58 @@ namespace Ajustee
             var _trigger = Match.Groups["trigger"].Value;
             await (string.IsNullOrEmpty(_trigger) ? Task.Delay(_delay) : ((Trigger)parameters[typeof(Trigger)]).WaitAsync(_trigger));
 
-            var _message = GetArg<ReceiveMessage>(0);
-            await ((ISocketServer)parameters[typeof(ISocketServer)]).Send(MessageEncoding.GetBytes(JsonSerializer.Serialize(_message)));
+            var _server = ((ISocketServer)parameters[typeof(ISocketServer)]);
+            var _type = Match.Groups["type"].Value;
+
+            switch (_type)
+            {
+                case ReceiveMessage.SubscribeType:
+                    {
+                        var _path = GetArg<string>(0);
+                        var _statusCode = GetArg<ReceiveMessageStatusCode>(1);
+                        _server.Send(MessageEncoding.GetBytes(JsonSerializer.Serialize(ReceiveMessage.Subscribe(_path, _statusCode))));
+                        break;
+                    }
+
+                case ReceiveMessage.UnsubscribeType:
+                    {
+                        var _path = GetArg<string>(0);
+                        var _statusCode = GetArg<ReceiveMessageStatusCode>(1);
+                        _server.Send(MessageEncoding.GetBytes(JsonSerializer.Serialize(ReceiveMessage.Unsubscribe(_path, _statusCode))));
+                        break;
+                    }
+
+                case ReceiveMessage.ChangedType:
+                    {
+                        var _configKeys = GetArg<IEnumerable<ConfigKey>>(0);
+                        _server.Send(MessageEncoding.GetBytes(JsonSerializer.Serialize(ReceiveMessage.Changed(_configKeys))));
+                        break;
+                    }
+
+                case ReceiveMessage.DeletedType:
+                    {
+                        var _path = GetArg<string>(0);
+                        _server.Send(MessageEncoding.GetBytes(JsonSerializer.Serialize(ReceiveMessage.Deleted(_path))));
+                        break;
+                    }
+
+                default:
+                    {
+                        var _closeStatus = int.Parse(Match.Groups["ccode"].Value);
+                        _server.Send(_closeStatus);
+                        break;
+                    }
+
+            }
 
             ((Trigger)parameters[typeof(Trigger)]).Release(Match.Groups["release"].Value);
         }
     }
 
-    [Scenario(@"^(?:(?<release>\w+)\:)?Start\s+server(?:\s+after\s+(?:(?:(?<after>\d+)\s+ms)|(?<trigger>\w+)))?$")]
-    internal class StartServerTriggerScenario : Scenario
+    [Scenario(@"^\s*(?:(?<release>\w+)\s*\:\s*)?Unavailable(?:\s+(?<attempts>\d+)\s+attempt[s]?)(?:\s+after\s+(?:(?:(?<after>\d+)\s+ms)|(?<triggers>[\w\,]+)))?\s*$")]
+    internal class ServerUnavailableScenario : Scenario
     {
-        public StartServerTriggerScenario(Match match, object[] args) : base(match, args) { }
+        public ServerUnavailableScenario(Match match, object[] args) : base(match, args) { }
 
         public override async Task Run(IDictionary<object, object> parameters)
         {
@@ -94,24 +152,25 @@ namespace Ajustee
             var _trigger = Match.Groups["trigger"].Value;
             await (string.IsNullOrEmpty(_trigger) ? Task.Delay(_delay) : ((Trigger)parameters[typeof(Trigger)]).WaitAsync(_trigger));
 
-            await ((ISocketServer)parameters[typeof(ISocketServer)]).Start();
+            var _server = ((ISocketServer)parameters[typeof(ISocketServer)]);
+            var _attempts = Match.Groups["attempts"].Value;
+
+            _server.Unavailable(int.Parse(_attempts));
 
             ((Trigger)parameters[typeof(Trigger)]).Release(Match.Groups["release"].Value);
         }
     }
 
-    [Scenario(@"^(?:(?<release>\w+)\:)?Stop\s+server(?:\s+after\s+(?:(?:(?<after>\d+)\s+ms)|(?<trigger>\w+)))?$")]
-    internal class StopServerTriggerScenario : Scenario
+    [Scenario(@"^\s*(?:(?<release>\w+)\s*\:\s*)?Continue\s*(?:\s+after\s+(?:(?:(?<after>\d+)\s+ms)|(?<triggers>[\w\,]+)))?\s*$")]
+    internal class ContinueScenario : Scenario
     {
-        public StopServerTriggerScenario(Match match, object[] args) : base(match, args) { }
+        public ContinueScenario(Match match, object[] args) : base(match, args) { }
 
         public override async Task Run(IDictionary<object, object> parameters)
         {
             if (!int.TryParse(Match.Groups["after"].Value, out var _delay)) _delay = 1;
-            var _trigger = Match.Groups["trigger"].Value;
-            await (string.IsNullOrEmpty(_trigger) ? Task.Delay(_delay) : ((Trigger)parameters[typeof(Trigger)]).WaitAsync(_trigger));
-
-            await ((ISocketServer)parameters[typeof(ISocketServer)]).Stop();
+            var _triggers = Match.Groups["triggers"].Value;
+            await (string.IsNullOrEmpty(_triggers) ? Task.Delay(_delay) : ((Trigger)parameters[typeof(Trigger)]).WaitAsync(_triggers.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)));
 
             ((Trigger)parameters[typeof(Trigger)]).Release(Match.Groups["release"].Value);
         }

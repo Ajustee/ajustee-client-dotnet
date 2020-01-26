@@ -10,6 +10,7 @@ namespace Ajustee
         private static readonly KeyValuePair<ScenarioAttribute, Type>[] m_ScenatioAttributes;
 
         private readonly IAjusteeClient m_Client;
+        private readonly ISocketServer m_Server;
         private readonly List<Scenario> m_ClientScenarios = new List<Scenario>();
         private readonly List<Scenario> m_ServerScenarios = new List<Scenario>();
         private readonly Trigger m_Trigger = new Trigger();
@@ -26,15 +27,21 @@ namespace Ajustee
 
         private async Task SenarioImpl(IList<Scenario> scenarios)
         {
-            foreach (var _scenario in scenarios)
+            try
             {
-                var _parameters = new Dictionary<object, object>
+                foreach (var _scenario in scenarios)
                 {
-                    [typeof(IAjusteeClient)] = m_Client,
-                    [typeof(Trigger)] = m_Trigger
-                };
-                await _scenario.Run(_parameters);
+                    var _parameters = new Dictionary<object, object>
+                    {
+                        [typeof(IAjusteeClient)] = m_Client,
+                        [typeof(ISocketServer)] = m_Server,
+                        [typeof(Trigger)] = m_Trigger
+                    };
+                    await _scenario.Run(_parameters);
+                }
             }
+            catch
+            { }
         }
 
         static ScenarioManager()
@@ -42,10 +49,11 @@ namespace Ajustee
             m_ScenatioAttributes = typeof(Scenario).Assembly.GetTypes().Where(t => t.BaseType == typeof(Scenario)).Select(t => new KeyValuePair<ScenarioAttribute, Type>((ScenarioAttribute)t.GetCustomAttributes(typeof(ScenarioAttribute), false).First(), t)).ToArray();
         }
 
-        public ScenarioManager(IAjusteeClient client)
+        public ScenarioManager(IAjusteeClient client, ISocketServer server)
             : base()
         {
             m_Client = client;
+            m_Server = server;
         }
 
         public void Client(string scenario, params object[] args)
@@ -58,16 +66,19 @@ namespace Ajustee
             m_ServerScenarios.Add(Parse(scenario, args));
         }
 
-        public void Wait()
+        public void Wait(int extra = 0)
         {
-            WaitAsync().GetAwaiter().GetResult();
+            WaitAsync(extra: extra).GetAwaiter().GetResult();
         }
 
-        public async Task WaitAsync()
+        public async Task WaitAsync(int extra = 0)
         {
             await Task.WhenAll(
                 Task.Run(() => SenarioImpl(m_ClientScenarios)),
                 Task.Run(() => SenarioImpl(m_ServerScenarios)));
+
+            if (extra > 0)
+                await Task.Delay(extra);
         }
 
         public void Dispose()

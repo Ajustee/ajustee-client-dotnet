@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Ajustee
 {
-    internal interface IWebSocketClient : IDisposable
+    internal interface ISocketClient : IDisposable
     {
         Task ConnectAsync(Uri uri, CancellationToken cancellationToken);
         Task SendAsync(ArraySegment<byte> buffer, WebSocketMessageType messageType, bool endOfMessage, CancellationToken cancellationToken);

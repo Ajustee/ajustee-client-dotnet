@@ -6,16 +6,18 @@ namespace Ajustee
     {
         #region Public constructors region
 
-        public ConnectionClosedException(bool reconnect)
+        public ConnectionClosedException(bool reconnect, int errorCode)
             : base()
         {
             Reconnect = reconnect;
+            ErrorCode = errorCode;
         }
 
-        public ConnectionClosedException(bool reconnect, Exception innerException)
+        public ConnectionClosedException(bool reconnect, int errorCode, Exception innerException)
             : base(innerException.Message, innerException)
         {
             Reconnect = reconnect;
+            ErrorCode = errorCode;
         }
 
         #endregion

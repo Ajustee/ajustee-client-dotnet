@@ -12,9 +12,14 @@ using ReceiveCallbackHandler = System.Action<System.Collections.Generic.IEnumera
 namespace Ajustee
 {
     internal class Subscriber<TSocketClient> : ISubscriber
-        where TSocketClient : IWebSocketClient, new()
+        where TSocketClient : ISocketClient, new()
     {
-        #region Private fields region
+        private class SubscribedItem
+        {
+            public string Path;
+            public IDictionary<string, string> Properties;
+            public bool Confirmed;
+        }
 
         private const int m_RECEIVE_STATE_NONE = 0;
         private const int m_RECEIVE_STATE_ACTIVE = 1;
@@ -22,15 +27,16 @@ namespace Ajustee
         private readonly SemaphoreSlim m_SyncRoot = new SemaphoreSlim(1, 1);
         private CancellationTokenSource m_CancellationTokenSource = new CancellationTokenSource();
         private bool m_Initialized;
-        private List<KeyValuePair<string, IDictionary<string, string>>> m_Subscribed;
+        private List<SubscribedItem> m_Subscribed;
         private int m_ReceiveState = m_RECEIVE_STATE_NONE;
         private const int m_BufferSize = 4096;
         private readonly ReceiveCallbackHandler m_ReceiveCallback;
         private TSocketClient m_Client;
 
-        #endregion
+        protected readonly AjusteeConnectionSettings Settings;
+        protected internal int ReconnectInitDelay = 30_000; // 30 seconds
 
-        #region Private methods region
+        public ISocketClient Client => m_Client;
 
         private Task InitializAsync()
         {
@@ -62,12 +68,14 @@ namespace Ajustee
                     try
                     {
                         // Try reconnect if requires.
-                        if (_reconnect && Settings.ReconnectSubscriptions)
+                        if (_reconnect)
                         {
                             // Delay before reconnect.
                             // Delay time will increase till 5 minutes of end.
                             // Used fot this following formula: initial * (log(counter, increase_factor) + 1) => maximum is 5 minutes, initial is 30 seconds.
+                            // To skip increasing delay have to set 0 for ReconnectInitDelay.
                             var _delay = (int)(ReconnectInitDelay * (Math.Log(++_reconnectCounter, 10.88632d) + 1));
+                            if (_delay < 1) _delay = 1;
                             Debug.WriteLine($"Reconnects after {_delay / 1000} seconds");
                             await Task.Delay(_delay, _cancellationToken);
 
@@ -92,8 +100,9 @@ namespace Ajustee
                                     OnReceiveMessage(_message);
                                 }
                             }
-                            catch (ConnectionClosedException)
+                            catch (ConnectionClosedException _ex)
                             {
+                                ATL.WriteLine($"Subscriber closed({_ex.ErrorCode})");
                                 throw;
                             }
                             catch (OperationCanceledException)
@@ -114,7 +123,9 @@ namespace Ajustee
                     catch (ConnectionClosedException _ex)
                     {
                         Debug.WriteLine($"Disconnected ({_ex.ErrorCode})");
-                        _reconnect = _ex.Reconnect;
+                        _reconnect = _ex.Reconnect && Settings.ReconnectSubscriptions;
+
+                        if (!_reconnect) throw;
                     }
                     catch (Exception _ex)
                     {
@@ -126,14 +137,41 @@ namespace Ajustee
             }, _cancellationToken);
         }
 
-        private void SetSubscribed(string path, IDictionary<String, string> properties)
+        private int SetBeingSubscribed(string path, IDictionary<string, string> properties)
         {
             if (m_Subscribed == null)
-                m_Subscribed = new List<KeyValuePair<string, IDictionary<string, string>>>();
-            m_Subscribed.Add(new KeyValuePair<string, IDictionary<string, string>>(path, properties));
+                m_Subscribed = new List<SubscribedItem>();
+            m_Subscribed.Add(new SubscribedItem { Path = path, Properties = properties, Confirmed = false });
+            return m_Subscribed.Count;
         }
 
-        public void SubscribeInternal(string path, IDictionary<string, string> properties)
+        private void ConfirmSubscribed(string path)
+        {
+            if (m_Subscribed == null) return;
+            for (int i = m_Subscribed.Count - 1; i >= 0; i--)
+            {
+                if (m_Subscribed[i].Path == path)
+                    m_Subscribed[i].Confirmed = true;
+            }
+        }
+
+        private void RemoveSubscribed(string path)
+        {
+            if (m_Subscribed == null) return;
+            for (int i = m_Subscribed.Count - 1; i >= 0; i--)
+            {
+                if (m_Subscribed[i].Path == path)
+                    m_Subscribed.RemoveAt(i);
+            }
+        }
+
+        private void RemoveSubscribed(int index)
+        {
+            if (m_Subscribed == null) return;
+            m_Subscribed.RemoveAt(index);
+        }
+
+        public void SubscribeInternal(string path, IDictionary<string, string> properties, CancellationToken cancellationToken)
         {
             // Validate properties.
             ValidateProperties(properties);
@@ -143,22 +181,56 @@ namespace Ajustee
                 InitializAsync().GetAwaiter().GetResult();
 
             // Sents subscribe command for next subscriptions.
-            SendCommandAsync(new WsSubscribeCommand(path, properties), m_CancellationTokenSource.Token).GetAwaiter().GetResult();
-            SetSubscribed(path, properties);
+            var _beingIndex = SetBeingSubscribed(path, properties);
+            try
+            {
+                SendCommandAsync(new WsSubscribeCommand(path, properties), cancellationToken).GetAwaiter().GetResult();
+            }
+            catch
+            {
+                RemoveSubscribed(_beingIndex);
+            }
         }
 
-        public async Task SubscribeAsyncInternal(string path, IDictionary<string, string> properties)
+        public async Task SubscribeAsyncInternal(string path, IDictionary<string, string> properties, CancellationToken cancellationToken)
         {
             if (!m_Initialized)
                 await InitializAsync();
 
             // Sents subscribe command for next subscriptions.
-            await SendCommandAsync(new WsSubscribeCommand(path, properties), m_CancellationTokenSource.Token);
-            SetSubscribed(path, properties);
+            var _beingIndex = SetBeingSubscribed(path, properties);
+            try
+            {
+                await SendCommandAsync(new WsSubscribeCommand(path, properties), cancellationToken);
+            }
+            catch
+            {
+                RemoveSubscribed(_beingIndex);
+            }
+        }
+
+        public void UnsubscribeInternal(string path, CancellationToken cancellationToken)
+        {
+            if (!m_Initialized)
+                InitializAsync().GetAwaiter().GetResult();
+
+            // Sents subscribe command for next subscriptions.
+            SendCommandAsync(new WsUnsubscribeCommand(path), cancellationToken).GetAwaiter().GetResult();
+        }
+
+        public async Task UnsubscribeAsyncInternal(string path, CancellationToken cancellationToken)
+        {
+            if (!m_Initialized)
+                await InitializAsync();
+
+            // Sents subscribe command for next subscriptions.
+            await SendCommandAsync(new WsUnsubscribeCommand(path), cancellationToken);
         }
 
         private async Task Reconnect(CancellationToken cancellationToken)
         {
+            ATL.WriteLine("Subscriber reconnecting");
+
             await m_SyncRoot.WaitAsync(m_CancellationTokenSource.Token);
             var _subscribed = m_Subscribed;
             var _initialized = m_Initialized;
@@ -169,26 +241,29 @@ namespace Ajustee
                 m_Subscribed = null;
 
                 foreach (var _item in _subscribed)
-                    await SubscribeAsyncInternal(_item.Key, _item.Value);
+                {
+                    if (_item.Confirmed)
+                        await SubscribeAsyncInternal(_item.Path, _item.Properties, cancellationToken);
+                }
+
+                ATL.WriteLine("Subscriber reconnected");
             }
             catch (Exception _ex)
             {
+                ATL.WriteLine("Subscriber reconnect failed");
+
                 // Restore internals.
                 m_Initialized = _initialized;
                 m_Subscribed = _subscribed;
 
                 // Throw connection closed exception to attemp reconnect again.
-                throw new ConnectionClosedException(true, _ex);
+                throw new ConnectionClosedException(true, (_ex as WebSocketException)?.ErrorCode ?? 0, _ex);
             }
             finally
             {
                 m_SyncRoot.Release();
             }
         }
-
-        #endregion
-
-        #region Public constructors region
 
         public Subscriber(AjusteeConnectionSettings settings, ReceiveCallbackHandler receiveCallback)
             : base()
@@ -197,16 +272,12 @@ namespace Ajustee
             m_ReceiveCallback = receiveCallback;
         }
 
-        #endregion
-
-        #region Public methods region
-
         public void Subscribe(string path, IDictionary<string, string> properties)
         {
             m_SyncRoot.Wait(m_CancellationTokenSource.Token);
             try
             {
-                SubscribeInternal(path, properties);
+                SubscribeInternal(path, properties, m_CancellationTokenSource.Token);
             }
             finally
             {
@@ -214,12 +285,42 @@ namespace Ajustee
             }
         }
 
-        public async Task SubscribeAsync(string path, IDictionary<string, string> properties)
+        public async Task SubscribeAsync(string path, IDictionary<string, string> properties, CancellationToken cancellationToken)
         {
-            await m_SyncRoot.WaitAsync(m_CancellationTokenSource.Token);
+            using var _cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(m_CancellationTokenSource.Token, cancellationToken);
+
+            await m_SyncRoot.WaitAsync(_cancellationSource.Token);
             try
             {
-                await SubscribeAsyncInternal(path, properties);
+                await SubscribeAsyncInternal(path, properties, _cancellationSource.Token);
+            }
+            finally
+            {
+                m_SyncRoot.Release();
+            }
+        }
+
+        public void Unsubscribe(string path)
+        {
+            m_SyncRoot.Wait(m_CancellationTokenSource.Token);
+            try
+            {
+                UnsubscribeInternal(path, m_CancellationTokenSource.Token);
+            }
+            finally
+            {
+                m_SyncRoot.Release();
+            }
+        }
+
+        public async Task UnsubscribeAsync(string path, CancellationToken cancellationToken)
+        {
+            using var _cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(m_CancellationTokenSource.Token, cancellationToken);
+
+            await m_SyncRoot.WaitAsync(_cancellationSource.Token);
+            try
+            {
+                await UnsubscribeAsyncInternal(path, _cancellationSource.Token);
             }
             finally
             {
@@ -242,17 +343,6 @@ namespace Ajustee
             }
         }
 
-        #endregion
-
-        #region Protected fields region
-
-        protected readonly AjusteeConnectionSettings Settings;
-        protected int ReconnectInitDelay = 30_000; // 30 seconds
-
-        #endregion
-
-        #region Protected methods region
-
         protected async Task ConnectAsync(CancellationToken cancellationToken)
         {
             // Creates socket client.
@@ -273,7 +363,7 @@ namespace Ajustee
         {
             await m_Client.SendAsync(command.GetBinary(), WebSocketMessageType.Text, true, cancellationToken);
 
-            ATL.WriteLine("Subscriber send: {0}", command);
+            ATL.WriteLine($"Subscriber send: {command}");
         }
 
         protected async Task<bool> ReceiveAsync(MemoryStream stream, CancellationToken cancellationToken)
@@ -288,7 +378,7 @@ namespace Ajustee
 
                 // Check to close result.
                 if (_result.MessageType == WebSocketMessageType.Close)
-                    throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely, _result.CloseStatusDescription);
+                    throw new ConnectionClosedException(true, (int)_result.CloseStatus);
 
                 // Appends to the received data to the memory.
                 stream.Write(_buffer.Array, 0, _result.Count);
@@ -301,10 +391,24 @@ namespace Ajustee
 
         protected void OnReceiveMessage(ReceiveMessage message)
         {
-            ATL.WriteLine("Subscriber received: {0}", message);
+            ATL.WriteLine($"Subscriber received: {message}");
 
             switch (message.Type)
             {
+                case ReceiveMessage.SubscribeType:
+                    {
+                        if (message.Data is SubscriptionMessageData _data && _data.StatusCode == ReceiveMessageStatusCode.Success)
+                            ConfirmSubscribed(_data.Path);
+                        break;
+                    }
+
+                case ReceiveMessage.UnsubscribeType:
+                    {
+                        if (message.Data is SubscriptionMessageData _data && _data.StatusCode == ReceiveMessageStatusCode.Success)
+                            RemoveSubscribed(_data.Path);
+                        break;
+                    }
+
                 case ReceiveMessage.ChangedType:
                     {
                         if (message.Data is IEnumerable<ConfigKey> _configKeys)
@@ -316,7 +420,5 @@ namespace Ajustee
                     }
             }
         }
-
-        #endregion
     }
 }

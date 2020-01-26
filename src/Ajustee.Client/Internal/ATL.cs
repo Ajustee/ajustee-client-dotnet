@@ -23,29 +23,45 @@ namespace Ajustee
             public override void Write(string message)
             {
                 if (TryTrace(ref message))
-                    Messages.Add(message);
+                {
+                    lock (Messages)
+                        Messages.Add(message);
+                }
             }
 
             public override void WriteLine(string message)
             {
                 if (TryTrace(ref message))
-                    Messages.Add(message);
+                {
+                    lock (Messages)
+                        Messages.Add(message);
+                }
             }
         }
 
         private static AjusteeTraceListener GetListener()
         {
-            foreach (var _listener in Trace.Listeners)
+            if (m_Listener == null)
             {
-                if (_listener is AjusteeTraceListener)
-                    return (AjusteeTraceListener)_listener;
+                foreach (var _listener in Trace.Listeners)
+                {
+                    if (_listener is AjusteeTraceListener)
+                    {
+                        m_Listener = (AjusteeTraceListener)_listener;
+                        break;
+                    }
+                }
             }
-            return null;
+            return m_Listener;
         }
 #endif
 
         private static bool m_Enabled;
         private static readonly object m_SyncRoot = new object();
+
+#if !NETSTANDARD1_3
+        private static AjusteeTraceListener m_Listener;
+#endif
 
         public static bool Enabled
         {
@@ -73,6 +89,7 @@ namespace Ajustee
                                     Trace.Listeners.Remove(_listener);
                             }
                             m_Enabled = value;
+                            m_Listener = null;
                         }
                     }
                 }
@@ -85,7 +102,7 @@ namespace Ajustee
 #if NETSTANDARD1_3
             throw new System.NotSupportedException();
 #else
-            return GetListener()?.Messages;
+            return (IList<string>)GetListener()?.Messages?.AsReadOnly() ?? new string[0];
 #endif
         }
 
@@ -95,15 +112,6 @@ namespace Ajustee
 #if !NETSTANDARD1_3
             if (m_Enabled)
                 Trace.WriteLine(message, "ATL");
-#endif
-        }
-
-        [Conditional("DEBUG")]
-        public static void WriteLine(string format, params object[] args)
-        {
-#if !NETSTANDARD1_3
-            if (m_Enabled)
-                Trace.WriteLine(string.Format(format, args), "ATL");
 #endif
         }
     }

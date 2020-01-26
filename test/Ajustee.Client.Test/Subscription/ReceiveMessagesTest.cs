@@ -1,8 +1,6 @@
 using System.Linq;
 using System.Collections.Generic;
 
-using static Ajustee.Helper;
-
 #if XUNIT
 using Xunit;
 #elif NUNIT
@@ -11,6 +9,8 @@ using Fact = NUnit.Framework.TestAttribute;
 using InlineData = NUnit.Framework.TestCaseAttribute;
 #endif
 
+using static Ajustee.Helper;
+
 namespace Ajustee
 {
     public class ReceiveMessagesTest
@@ -18,9 +18,8 @@ namespace Ajustee
         [Fact]
         public void ChangedMessage()
         {
-            var json = @"{""type"":""changed"",""data"":[{""path"":""p1"",""DataType"":""Integer"",""Value"":""1""},{""path"":""p2"",""DataType"":""Boolean"",""Value"":true}]}";
+            var json = @"{""type"":""changed"",""data"":[{""Path"":""p1"",""DataType"":""Integer"",""Value"":""1""},{""Path"":""p2"",""DataType"":""Boolean"",""Value"":true}]}";
             var message = JsonSerializer.Deserialize<ReceiveMessage>(json);
-
             Assert.True(message.Type == "changed");
             Assert.True(typeof(IEnumerable<ConfigKey>).IsAssignableFrom(message.Data.GetType()));
             var data = ((IEnumerable<ConfigKey>)message.Data).ToArray();
@@ -32,8 +31,10 @@ namespace Ajustee
             Assert.True(data[1].DataType == ConfigKeyType.Boolean);
             Assert.True(data[1].Value == "true");
 
-            var message2 = JsonSerializer.Deserialize<ReceiveMessage>(JsonSerializer.Serialize(message));
+            var serialized = JsonSerializer.Serialize(message);
+            //Assert.True(json == serialized); TODO: Fix bug on serialize config key
 
+            var message2 = JsonSerializer.Deserialize<ReceiveMessage>(serialized);
             Assert.True(message.Type == message2.Type);
             Assert.True(typeof(IEnumerable<ConfigKey>).IsAssignableFrom(message2.Data.GetType()));
             var data2 = ((IEnumerable<ConfigKey>)message2.Data).ToArray();
@@ -58,15 +59,16 @@ namespace Ajustee
         public void SubscribeMessage(string json, string type, string path, object statusCode)
         {
             var message = JsonSerializer.Deserialize<ReceiveMessage>(json);
-
             Assert.True(message.Type == type);
             Assert.True(message.Data.GetType() == typeof(SubscriptionMessageData));
             var data = (SubscriptionMessageData)message.Data;
             Assert.True(data.Path == path);
             Assert.True(object.Equals(data.StatusCode, statusCode));
 
-            var message2 = JsonSerializer.Deserialize<ReceiveMessage>(JsonSerializer.Serialize(message));
+            var serialized = JsonSerializer.Serialize(message);
+            Assert.True(json == serialized);
 
+            var message2 = JsonSerializer.Deserialize<ReceiveMessage>(serialized);
             Assert.True(message.Type == message2.Type);
             Assert.True(message2.Data.GetType() == typeof(SubscriptionMessageData));
             var data2 = (SubscriptionMessageData)message2.Data;
@@ -79,13 +81,14 @@ namespace Ajustee
         public void DeletedMessage(string json, string type, string path)
         {
             var message = JsonSerializer.Deserialize<ReceiveMessage>(json);
-
             Assert.True(message.Type == type);
             Assert.True(message.Data.GetType() == typeof(string));
             Assert.True(object.Equals(message.Data, path));
 
-            var message2 = JsonSerializer.Deserialize<ReceiveMessage>(JsonSerializer.Serialize(message));
+            var serialized = JsonSerializer.Serialize(message);
+            Assert.True(json == serialized);
 
+            var message2 = JsonSerializer.Deserialize<ReceiveMessage>(serialized);
             Assert.True(message.Type == message2.Type);
             Assert.True(message2.Data.GetType() == typeof(string));
             Assert.True(object.Equals(message.Data, message2.Data));

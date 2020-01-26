@@ -33,6 +33,10 @@ namespace Ajustee
         System.Threading.Tasks.Task SubscribeAsync(string path, System.Threading.CancellationToken cancellationToken = default);
 
         System.Threading.Tasks.Task SubscribeAsync(string path, IDictionary<string, string> properties, System.Threading.CancellationToken cancellationToken = default);
+
+        void Unsubscribe(string path);
+
+        System.Threading.Tasks.Task UnsubscribeAsync(string path, System.Threading.CancellationToken cancellationToken = default);
 #endif
 
         #endregion

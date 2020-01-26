@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Ajustee
 {
-    internal class WebSocketClient : IWebSocketClient
+    internal class WebSocketClient : ISocketClient
     {
         private readonly ClientWebSocket m_Client = new ClientWebSocket();
         public void SetRequestHeader(string headerName, string headerValue) => m_Client.Options.SetRequestHeader(headerName, headerValue);
