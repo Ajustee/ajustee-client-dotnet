@@ -16,7 +16,9 @@ namespace Ajustee
 #if SUBSCRIBE
         internal override ISubscriber CreateSubscriber()
         {
-            return new Subscriber<FakeSocketClient>(Settings, keys => OnConfigKeyChanged(new AjusteeConfigKeyEventArgs(keys)))
+            return new Subscriber<FakeSocketClient>(Settings,
+                k => OnChanged(new AjusteeConfigKeyChangedEventArgs(k)),
+                p => OnDeleted(new AjusteeConfigKeyDeletedEventArgs(p)))
             {
                 ReconnectInitDelay = 0 // Skips increasing delay
             };
