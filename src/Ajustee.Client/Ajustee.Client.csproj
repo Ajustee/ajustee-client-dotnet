@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Title>Ajustee Client</Title>
     <Description>Ajustee client for .NET</Description>
-    <VersionPrefix>0.4.0</VersionPrefix>
+    <VersionPrefix>0.4.1</VersionPrefix>
     <VersionSuffix>beta01</VersionSuffix>
     <AssemblyName>Ajustee.Client</AssemblyName>
     <!--<TargetFramework>netcoreapp3.0</TargetFramework>-->
