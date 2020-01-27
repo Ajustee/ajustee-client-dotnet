@@ -68,23 +68,29 @@ namespace Ajustee.Tools
 
         public static async Task ExecuteAsync()
         {
-            Console.WriteLine("Ajustee web socket tools");
-            Console.WriteLine();
+            Console.WriteLine("-----------------------------------------------------------");
+            Console.WriteLine("* Ajustee web socket tools");
+            Console.WriteLine("* commands:");
+            Console.WriteLine("* subscribe - subscribes to configuration key changes");
+            Console.WriteLine("* unsubscribe - unsubscribes from configuration key changes");
+            Console.WriteLine("-----------------------------------------------------------");
+
             ATL.Enabled = true;
             Trace.Listeners.Add(new AtlConsoleTraceListener());
 
             while (true)
             {
-                var _url = "wss://90uik2l35c.execute-api.us-west-2.amazonaws.com/ws";
-                var _appId = "nLnoagp.mKQk1t2YEfs5RlrPbcXrjg~8";
-                //Console.Write("Enter url: "); _url = ReadLine(indend: false);
-                //Console.Write("Enter app-id: "); _appId = ReadLine();
+                //var _url = "wss://90uik2l35c.execute-api.us-west-2.amazonaws.com/ws";
+                //var _appId = "nLnoagp.mKQk1t2YEfs5RlrPbcXrjg~8";
+                Console.Write("Enter api url: "); var _url = ReadLine(indend: false);
+                Console.Write("Enter application id: "); var _appId = ReadLine();
 
                 var _cancellationTokenSource = new CancellationTokenSource();
                 try
                 {
                     var _client = CreateClient(_url, _appId);
-                    _client.ConfigKeyChanged += (_, e) => WriteLine(JsonSerializer.Serialize(e.ConfigKeys));
+                    _client.Changed += (_, e) => WriteLine("Changed: " + JsonSerializer.Serialize(e.ConfigKeys));
+                    _client.Deleted += (_, e) => WriteLine("Deleted:" + JsonSerializer.Serialize(e.Path));
 
                     await Subscribe(_client, cancellationToken: _cancellationTokenSource.Token, m =>
                     {

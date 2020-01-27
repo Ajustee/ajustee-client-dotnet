@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 using static Ajustee.Helper;
 using ReceiveCallbackHandler = System.Action<System.Collections.Generic.IEnumerable<Ajustee.ConfigKey>>;
+using DeletedCallbackHandler = System.Action<string>;
 
 namespace Ajustee
 {
@@ -31,6 +32,7 @@ namespace Ajustee
         private int m_ReceiveState = m_RECEIVE_STATE_NONE;
         private const int m_BufferSize = 4096;
         private readonly ReceiveCallbackHandler m_ReceiveCallback;
+        private readonly DeletedCallbackHandler m_DeletedCallback;
         private TSocketClient m_Client;
 
         protected readonly AjusteeConnectionSettings Settings;
@@ -265,11 +267,12 @@ namespace Ajustee
             }
         }
 
-        public Subscriber(AjusteeConnectionSettings settings, ReceiveCallbackHandler receiveCallback)
+        public Subscriber(AjusteeConnectionSettings settings, ReceiveCallbackHandler receiveCallback, DeletedCallbackHandler deletedCallback)
             : base()
         {
             Settings = settings;
             m_ReceiveCallback = receiveCallback;
+            m_DeletedCallback = deletedCallback;
         }
 
         public void Subscribe(string path, IDictionary<string, string> properties)
@@ -338,7 +341,7 @@ namespace Ajustee
                 if (m_Client != null)
                 {
                     m_Client.Dispose();
-                    m_Client = default(TSocketClient);
+                    m_Client = default;
                 }
             }
         }
@@ -415,6 +418,18 @@ namespace Ajustee
                         {
                             // Raises receive callback.
                             m_ReceiveCallback(_configKeys);
+                        }
+                        break;
+                    }
+
+                case ReceiveMessage.DeletedType:
+                    {
+                        if (message.Data is string _path)
+                        {
+                            RemoveSubscribed(_path);
+
+                            // Raises deleted callback.
+                            m_DeletedCallback(_path);
                         }
                         break;
                     }

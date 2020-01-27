@@ -11,7 +11,9 @@ namespace Ajustee
 
         internal virtual ISubscriber CreateSubscriber()
         {
-            return new Subscriber<WebSocketClient>(Settings, keys => OnConfigKeyChanged(new AjusteeConfigKeyEventArgs(keys)));
+            return new Subscriber<WebSocketClient>(Settings,
+                k => OnChanged(new AjusteeConfigKeyChangedEventArgs(k)),
+                p => OnDeleted(new AjusteeConfigKeyDeletedEventArgs(p)));
         }
 
         internal ISubscriber Subscriber
@@ -77,11 +79,21 @@ namespace Ajustee
         /// <summary>
         /// Occurs when configuration key has been changed.
         /// </summary>
-        public event AjusteeConfigKeyEventHandler ConfigKeyChanged;
+        public event AjusteeConfigKeyChangedEventHandler Changed;
 
-        protected void OnConfigKeyChanged(AjusteeConfigKeyEventArgs e)
+        protected void OnChanged(AjusteeConfigKeyChangedEventArgs e)
         {
-            ConfigKeyChanged?.Invoke(this, e);
+            Changed?.Invoke(this, e);
+        }
+
+        /// <summary>
+        /// Occurs when configuration key has been deleted.
+        /// </summary>
+        public event AjusteeConfigKeyDeletedEventHandler Deleted;
+
+        protected void OnDeleted(AjusteeConfigKeyDeletedEventArgs e)
+        {
+            Deleted?.Invoke(this, e);
         }
     }
 }
