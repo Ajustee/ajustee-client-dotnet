@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using System.Net.WebSockets;
+using System;
 
 #if XUNIT
 using Xunit;
@@ -23,6 +24,13 @@ namespace Ajustee
                 ApplicationId = "test-app-id",
                 ReconnectSubscriptions = reconnect
             });
+        }
+
+        [Fact]
+        public void SubscriptionUri()
+        {
+            var _wssUri = Helper.GetSubscribeUrl(new Uri("https://api.ajustee.com/"));
+            Assert.True(_wssUri == new Uri("wss://ws.ajustee.com/"));
         }
 
         [Fact]

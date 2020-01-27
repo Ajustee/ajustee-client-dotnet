@@ -1,10 +1,10 @@
 <Project>
 
-  <Target Name="Push" DependsOnTargets="Pack" Condition="'$(Configuration)' == 'Release' AND '$(IsPackable)' == 'True'">
+  <Target Name="Push" DependsOnTargets="Pack" Condition="'$(Configuration)' == 'Release' AND '$(IsPackable)' == 'True' AND '$(PushApiKey)' != ''">
     <PropertyGroup>
       <PushSource>https://api.nuget.org/v3/index.json</PushSource>
     </PropertyGroup>
-    <Exec Command="dotnet nuget push &quot;$(PackageOutputPath)$(PackageId).$(PackageVersion).nupkg&quot; --source $(PushSource)" ContinueOnError="false" />
+    <Exec Command="dotnet nuget push &quot;$(PackageOutputPath)$(PackageId).$(PackageVersion).nupkg&quot; --api-key=$(PushApiKey) --source $(PushSource)" ContinueOnError="false" />
   </Target>
 
 </Project>

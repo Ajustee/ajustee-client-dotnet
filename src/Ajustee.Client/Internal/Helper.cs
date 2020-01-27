@@ -56,14 +56,11 @@ namespace Ajustee
 
         public static Uri GetSubscribeUrl(Uri baseUri)
         {
-//#if DEBUG
-//            //return new Uri("wss://viz8masph1.execute-api.us-west-2.amazonaws.com/demo");
-//            return new Uri("wss://qlnzq5smse.execute-api.us-west-2.amazonaws.com/demo");
-//#else
             var _uriBuilder = new UriBuilder(baseUri);
             _uriBuilder.Scheme = m_WebSocketSchema;// Sets websocket secure schema
+            if (_uriBuilder.Host.StartsWith("api."))
+                _uriBuilder.Host = "ws." + _uriBuilder.Host.Substring(4);
             return _uriBuilder.Uri;
-//#endif
         }
 
         public static void ValidateProperties(IEnumerable<KeyValuePair<string, string>> properties)
