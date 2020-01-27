@@ -6,7 +6,7 @@ using System.Collections;
 using System.Reflection;
 using System.Linq.Expressions;
 using System.Collections.Concurrent;
-using System.Diagnostics;
+using System.Text;
 
 namespace Ajustee
 {
@@ -28,6 +28,7 @@ namespace Ajustee
         public const string KeyPropsName = "x-key-props";
         public const string TrackerIdName = "ajustee-tracker-id";
         public static readonly IJsonSerializer JsonSerializer = JsonSerializerFactory.Create();
+        public static readonly Encoding MessageEncoding = new UTF8Encoding(false);
 
         #endregion
 
@@ -55,15 +56,14 @@ namespace Ajustee
 
         public static Uri GetSubscribeUrl(Uri baseUri)
         {
-#if DEBUG
-            return new Uri("wss://viz8masph1.execute-api.us-west-2.amazonaws.com/demo");
-            //return new Uri("wss://qlnzq5smse.execute-api.us-west-2.amazonaws.com/demo");
-            
-#else
+//#if DEBUG
+//            //return new Uri("wss://viz8masph1.execute-api.us-west-2.amazonaws.com/demo");
+//            return new Uri("wss://qlnzq5smse.execute-api.us-west-2.amazonaws.com/demo");
+//#else
             var _uriBuilder = new UriBuilder(baseUri);
             _uriBuilder.Scheme = m_WebSocketSchema;// Sets websocket secure schema
             return _uriBuilder.Uri;
-#endif
+//#endif
         }
 
         public static void ValidateProperties(IEnumerable<KeyValuePair<string, string>> properties)

@@ -1,87 +1,99 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Ajustee
 {
     public partial class AjusteeClient
     {
-        #region Private fields region
-
-        private Subscriber m_Subscriber;
+        private ISubscriber m_Subscriber;
         private readonly object m_SubscriberSyncRoot = new object();
 
-        #endregion
-
-        #region Private methods region
-
-        private Subscriber EnsureSubscriber()
+        internal virtual ISubscriber CreateSubscriber()
         {
-            if (m_Subscriber == null)
-            {
-                lock (m_SubscriberSyncRoot)
-                {
-                    if (m_Subscriber == null)
-                    {
-                        // Creates a new instance of the subscriber.
-                        m_Subscriber = new Subscriber(Settings, keys => OnConfigKeyChanged(new AjusteeConfigKeyEventArgs(keys)));
-
-                        // Handle the dispose of the subscriber.
-                        InvokeOnDispose(() =>
-                        {
-                            if (m_Subscriber != null)
-                            {
-                                m_Subscriber.Dispose();
-                                m_Subscriber = null;
-                            }
-                        });
-                    }
-                }
-            }
-            return m_Subscriber;
+            return new Subscriber<WebSocketClient>(Settings,
+                k => OnChanged(new AjusteeConfigKeyChangedEventArgs(k)),
+                p => OnDeleted(new AjusteeConfigKeyDeletedEventArgs(p)));
         }
 
-        #endregion
+        internal ISubscriber Subscriber
+        {
+            get
+            {
+                if (m_Subscriber == null)
+                {
+                    lock (m_SubscriberSyncRoot)
+                    {
+                        if (m_Subscriber == null)
+                        {
+                            // Creates a new instance of the subscriber.
+                            m_Subscriber = CreateSubscriber();
 
-        #region Public methods region
+                            // Handle the dispose of the subscriber.
+                            InvokeOnDispose(() =>
+                            {
+                                if (m_Subscriber != null)
+                                {
+                                    m_Subscriber.Dispose();
+                                    m_Subscriber = null;
+                                }
+                            });
+                        }
+                    }
+                }
+                return m_Subscriber;
+            }
+        }
 
         public void Subscribe(string path)
         {
-            Subscribe(path, null);
+            Subscriber.Subscribe(path, null);
         }
 
         public void Subscribe(string path, IDictionary<string, string> properties)
         {
-            EnsureSubscriber().Subscribe(path, properties);
+            Subscriber.Subscribe(path, properties);
         }
 
-        public async System.Threading.Tasks.Task SubscribeAsync(string path, CancellationToken cancellationToken = default)
+        public async Task SubscribeAsync(string path, CancellationToken cancellationToken = default)
         {
-            await SubscribeAsync(path, null);
+            await Subscriber.SubscribeAsync(path, null, cancellationToken: cancellationToken);
         }
 
-        public async System.Threading.Tasks.Task SubscribeAsync(string path, IDictionary<string, string> properties, CancellationToken cancellationToken = default)
+        public async Task SubscribeAsync(string path, IDictionary<string, string> properties, CancellationToken cancellationToken = default)
         {
-            await EnsureSubscriber().SubscribeAsync(path, properties);
+            await Subscriber.SubscribeAsync(path, properties, cancellationToken);
         }
 
-        #endregion
 
-        #region Public events region
+        public void Unsubscribe(string path)
+        {
+            Subscriber.Unsubscribe(path);
+        }
+
+        public async Task UnsubscribeAsync(string path, CancellationToken cancellationToken = default)
+        {
+            await Subscriber.UnsubscribeAsync(path, cancellationToken);
+        }
 
         /// <summary>
         /// Occurs when configuration key has been changed.
         /// </summary>
-        public event AjusteeConfigKeyEventHandler ConfigKeyChanged;
+        public event AjusteeConfigKeyChangedEventHandler Changed;
 
-        #endregion
-
-        #region Protected methods region
-
-        protected void OnConfigKeyChanged(AjusteeConfigKeyEventArgs e)
+        protected void OnChanged(AjusteeConfigKeyChangedEventArgs e)
         {
-            ConfigKeyChanged?.Invoke(this, e);
+            Changed?.Invoke(this, e);
         }
 
-        #endregion
+        /// <summary>
+        /// Occurs when configuration key has been deleted.
+        /// </summary>
+        public event AjusteeConfigKeyDeletedEventHandler Deleted;
+
+        protected void OnDeleted(AjusteeConfigKeyDeletedEventArgs e)
+        {
+            Deleted?.Invoke(this, e);
+        }
     }
 }

@@ -49,12 +49,11 @@ namespace Ajustee.Tools
         {
             return Task.Run(async () =>
             {
-                try
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    while (!cancellationToken.IsCancellationRequested)
+                    var _message = new StringBuilder();
+                    try
                     {
-                        var _message = new StringBuilder();
-
                         var _segment = new ArraySegment<byte>(new byte[4096]);
                         WebSocketReceiveResult _result = null;
                         do
@@ -62,18 +61,19 @@ namespace Ajustee.Tools
                             _result = await socket.ReceiveAsync(_segment, cancellationToken);
 
                             if (_result.MessageType == WebSocketMessageType.Close)
-                                throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely);
+                                throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely, _result.CloseStatusDescription);
 
                             _message.Append(Encoding.UTF8.GetString(_segment.Array, 0, _result.Count));
                         }
                         while (!_result.EndOfMessage);
-
-                        WriteLine(_message.ToString());
                     }
-                }
-                catch (WebSocketException _ex) when (_ex.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely)
-                {
-                    Console.WriteLine($"Disconnected ({_ex.NativeErrorCode})");
+                    catch (WebSocketException _ex) when (_ex.WebSocketErrorCode != WebSocketError.ConnectionClosedPrematurely)
+                    {
+                        _message.Append(_ex.Message);
+                    }
+
+                    WriteLine(_message.ToString());
+                    _message.Clear();
                 }
             }, cancellationToken);
         }
@@ -84,7 +84,9 @@ namespace Ajustee.Tools
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
+                    if (socket.State != WebSocketState.Open) break;
                     var _message = ReadLine();
+                    if (socket.State != WebSocketState.Open) break;
                     if (messageFilter(_message))
                         await socket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(_message)), WebSocketMessageType.Text, true, cancellationToken);
                 }
@@ -108,9 +110,10 @@ namespace Ajustee.Tools
                 Console.Write("Enter properties: "); var _properties = Console.ReadLine();
 
                 var _cancellationTokenSource = new CancellationTokenSource();
+                ClientWebSocket _socket = null;
                 try
                 {
-                    var _socket = CreateSocket(_appId, _keyPath, _properties);
+                    _socket = CreateSocket(_appId, _keyPath, _properties);
                     await _socket.ConnectAsync(new Uri(_url), _cancellationTokenSource.Token);
                     WriteLine("Connected (press CTRL+C to quit)");
 
@@ -125,9 +128,16 @@ namespace Ajustee.Tools
                         return true;
                     }));
                 }
+                catch (WebSocketException _ex) when (_ex.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely)
+                {
+                    Console.WriteLine($"Disconnected: code ({(int?)_socket.CloseStatus})");
+                }
                 catch (Exception _ex)
                 {
-                    Console.WriteLine($"Occured error: {_ex.Message}");
+                    if (_socket.CloseStatus != null)
+                        Console.WriteLine($"Disconnected: code {_socket.CloseStatus}");
+                    else
+                        Console.WriteLine($"Occured error: {_ex.Message}");
                 }
 
                 Console.WriteLine();

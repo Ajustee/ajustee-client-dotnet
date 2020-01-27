@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 using static Ajustee.Helper;
 
@@ -8,57 +7,45 @@ namespace Ajustee
 {
     internal abstract class WsCommand
     {
-        #region Private fields region
-
-        private string m_Action;
-        private object m_Data;
-
-        #endregion
-
-        #region Public constructors region
+        public string action { get; }
+        public object data { get; private set; }
 
         public WsCommand(string action)
         {
-            m_Action = action;
+            this.action = action;
         }
-
-        #endregion
-
-        #region Public methods region
 
         public ArraySegment<byte> GetBinary()
         {
-            var _dataText = m_Data as string;
-            if (_dataText == null)
-                _dataText = "null";
-            else
-                _dataText = JsonSerializer.Serialize(m_Data);
-
-            return new ArraySegment<byte>(Encoding.UTF8.GetBytes($"{{\"action\":\"{m_Action}\",data:{_dataText}}}"));
+            return new ArraySegment<byte>(MessageEncoding.GetBytes(JsonSerializer.Serialize(this)));
         }
-
-        #endregion
-
-        #region Protected methods region
 
         protected void SetData(object data)
         {
-            m_Data = data;
+            this.data = data;
         }
 
-        #endregion
+        public override string ToString()
+        {
+            return JsonSerializer.Serialize(this);
+        }
     }
 
     internal sealed class WsSubscribeCommand : WsCommand
     {
-        #region Public constructors region
-
-        public WsSubscribeCommand(AjusteeConnectionSettings settings, string path, IDictionary<string, string> properties)
+        public WsSubscribeCommand(string path, IDictionary<string, string> properties)
             : base("subscribe")
         {
-            SetData($"{{\"{AppIdName}\":\"{settings.ApplicationId}\",\"{KeyPathName}\":\"{path}\",\"{KeyPropsName}:\"{(properties == null ? "null": JsonSerializer.Serialize(properties))}}}");
+            SetData(new { path, props = properties });
         }
+    }
 
-        #endregion
+    internal sealed class WsUnsubscribeCommand : WsCommand
+    {
+        public WsUnsubscribeCommand(string path)
+            : base("unsubscribe")
+        {
+            SetData(new { path });
+        }
     }
 }

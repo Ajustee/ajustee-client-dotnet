@@ -21,7 +21,7 @@ namespace Ajustee
         public SystemJsonSerializer()
             : base()
         {
-            m_JsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            m_JsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, IgnoreNullValues = true };
             m_JsonOptions.Converters.Add(new JsonStringEnumConverter());
         }
 
@@ -36,12 +36,12 @@ namespace Ajustee
 
         public T Deserialize<T>(string json)
         {
-            return JsonSerializer.Deserialize<T>(json);
+            return JsonSerializer.Deserialize<T>(json, m_JsonOptions);
         }
 
         public T Deserialize<T>(Stream jsonStream)
         {
-            using var _jsonReader = new StreamReader(jsonStream, Encoding.UTF8);
+            using var _jsonReader = new StreamReader(jsonStream, Helper.MessageEncoding);
             return JsonSerializer.Deserialize<T>(_jsonReader.ReadToEnd(), m_JsonOptions);
         }
 

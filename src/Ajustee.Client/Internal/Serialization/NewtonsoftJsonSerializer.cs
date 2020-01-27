@@ -1,8 +1,8 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Text;
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Ajustee
 {
@@ -20,7 +20,8 @@ namespace Ajustee
         public NewtonsoftJsonSerializer()
             : base()
         {
-            m_JsonOptions = new JsonSerializerSettings { DateFormatHandling = DateFormatHandling.IsoDateFormat };
+            m_JsonOptions = new JsonSerializerSettings { DateFormatHandling = DateFormatHandling.IsoDateFormat, NullValueHandling = NullValueHandling.Ignore };
+            m_JsonOptions.Converters.Add(new StringEnumConverter());
             m_Serializer = JsonSerializer.Create(m_JsonOptions);
         }
 
@@ -43,14 +44,14 @@ namespace Ajustee
 
         public T Deserialize<T>(Stream jsonStream)
         {
-            using var _jsonReader = new JsonTextReader(new StreamReader(jsonStream, Encoding.UTF8));
+            using var _jsonReader = new JsonTextReader(new StreamReader(jsonStream, Helper.MessageEncoding));
             return m_Serializer.Deserialize<T>(_jsonReader);
         }
 
 #if ASYNC
         public async System.Threading.Tasks.Task<T> DeserializeAsync<T>(Stream jsonStream, System.Threading.CancellationToken cancellationToken = default)
         {
-            using var _jsonReader = new JsonTextReader(new StreamReader(jsonStream, Encoding.UTF8));
+            using var _jsonReader = new JsonTextReader(new StreamReader(jsonStream, Helper.MessageEncoding));
             return await System.Threading.Tasks.Task.FromResult(m_Serializer.Deserialize<T>(_jsonReader));
         }
 #endif
