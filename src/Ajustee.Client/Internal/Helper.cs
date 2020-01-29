@@ -15,6 +15,7 @@ namespace Ajustee
         #region Private fields region
 
         private const string m_ConfigurationKeysUrlTemplate = "configurationKeys?path={0}";
+        private const string m_UpdateUrlTemplate = "update{0}?value={1}";
         private const string m_WebSocketSchema = "wss";
 
         private static readonly ConcurrentDictionary<Type, Func<object, IList<KeyValuePair<string, string>>>> m_ReflecteMethodCache = new ConcurrentDictionary<Type, Func<object, IList<KeyValuePair<string, string>>>>();
@@ -51,7 +52,17 @@ namespace Ajustee
         {
             if (baseUri.AbsoluteUri.EndsWith("/"))
                 baseUri = new Uri(baseUri.AbsoluteUri.TrimEnd('/'));
+            if (keyPath)
             return new Uri(baseUri, string.Format(m_ConfigurationKeysUrlTemplate, keyPath));
+        }
+
+        public static Uri GetUpdateUrl(Uri baseUri, string keyPath, string value)
+        {
+            if (baseUri.AbsoluteUri.EndsWith("/"))
+                baseUri = new Uri(baseUri.AbsoluteUri.TrimEnd('/'));
+            if (baseUri.AbsoluteUri.EndsWith("/"))
+                baseUri = new Uri(baseUri.AbsoluteUri.TrimEnd('/'));
+            return new Uri(baseUri, string.Format(m_UpdateUrlTemplate, keyPath));
         }
 
         public static Uri GetSubscribeUrl(Uri baseUri)

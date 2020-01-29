@@ -75,8 +75,7 @@ namespace Ajustee.Tools
             Console.WriteLine("* unsubscribe - unsubscribes from configuration key changes");
             Console.WriteLine("-----------------------------------------------------------");
 
-            ATL.Enabled = true;
-            Trace.Listeners.Add(new AtlConsoleTraceListener());
+            Trace.Listeners.Add(new ATLConsoleTraceListener());
 
             while (true)
             {

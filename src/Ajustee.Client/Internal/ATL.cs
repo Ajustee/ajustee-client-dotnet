@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Ajustee
 {
-    public static class ATL
+    internal static class ATL
     {
 #if !NETSTANDARD1_3
         private class AjusteeTraceListener : TraceListener

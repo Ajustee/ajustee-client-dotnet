@@ -28,7 +28,7 @@ namespace Ajustee
 
         #region Private methods region
 
-        private static WebRequest CreateRequest(AjusteeConnectionSettings settings, string path, IDictionary<string, string> properties)
+        private static WebRequest CreateGetRequest(AjusteeConnectionSettings settings, string path, IDictionary<string, string> properties)
         {
             // Creates get http request with api url and specified configuration path.
             var _request = WebRequest.Create(GetConfigurationKeysUrl(settings.ApiUrl, path ?? settings.DefaultPath));
@@ -51,6 +51,20 @@ namespace Ajustee
             return _request;
         }
 
+        private static WebRequest CreateUpdatRequest(AjusteeConnectionSettings settings, string path)
+        {
+            // Creates get http request with api url and specified configuration path.
+            var _request = WebRequest.Create(GetConfigurationKeysUrl(settings.ApiUrl, path));
+
+            // Sets method name.
+            _request.Method = "POST";
+
+            // Adds headers of specify customers.
+            _request.Headers.Add(AppIdName, settings.ApplicationId);
+
+            return _request;
+        }
+
         #endregion
 
         #region Public methods region
@@ -58,7 +72,7 @@ namespace Ajustee
         public Stream GetStream(AjusteeConnectionSettings settings, string path, IDictionary<string, string> properties)
         {
             // Creates request.
-            m_Request = CreateRequest(settings, path, properties);
+            m_Request = CreateGetRequest(settings, path, properties);
 
             // Gets response.
             m_Response = m_Request.GetResponse();
@@ -67,17 +81,35 @@ namespace Ajustee
             return m_Response.GetResponseStream();
         }
 
+        public void Update(AjusteeConnectionSettings settings, string path, string value)
+        {
+            // Creates request.
+            m_Request = CreateUpdatRequest(settings, path);
+
+            // Gets response.
+            m_Response = m_Request.GetResponse();
+        }
+
 #if ASYNC
         public async System.Threading.Tasks.Task<Stream> GetStreamAsync(AjusteeConnectionSettings settings, string path, IDictionary<string, string> properties, System.Threading.CancellationToken cancellationToken = default)
         {
             // Creates request.
-            m_Request = CreateRequest(settings, path, properties);
+            m_Request = CreateGetRequest(settings, path, properties);
 
             // Gets response.
             m_Response = await m_Request.GetResponseAsync();
 
             // Returns response's stream.
             return m_Response.GetResponseStream();
+        }
+
+        public async System.Threading.Tasks.Task UpdateAsync(AjusteeConnectionSettings settings, string path, string value, System.Threading.CancellationToken cancellationToken = default)
+        {
+            // Creates request.
+            m_Request = CreateUpdatRequest(settings, path);
+
+            // Gets response.
+            m_Response = await m_Request.GetResponseAsync();
         }
 #endif
 
