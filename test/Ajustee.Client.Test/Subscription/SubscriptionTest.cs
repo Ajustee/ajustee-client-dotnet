@@ -26,11 +26,15 @@ namespace Ajustee
             });
         }
 
-        [Fact]
-        public void SubscriptionUri()
+        [Theory]
+        [InlineData("https://api.ajustee.com/", "wss://ws.ajustee.com/")]
+        [InlineData("http://api.ajustee.com/", "wss://ws.ajustee.com/")]
+        [InlineData("https://api.ajustee.com/path", "wss://ws.ajustee.com/path")]
+        [InlineData("https://some.ajustee.com/", "wss://some.ajustee.com/")]
+        public void SubscriptionUri(string apiUrl, string wssUrl)
         {
-            var _wssUri = Helper.GetSubscribeUrl(new Uri("https://api.ajustee.com/"));
-            Assert.True(_wssUri == new Uri("wss://ws.ajustee.com/"));
+            var _wssUri = Helper.GetSubscribeUrl(new Uri(apiUrl));
+            Assert.True(_wssUri == new Uri(wssUrl));
         }
 
         [Fact]

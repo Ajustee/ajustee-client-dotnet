@@ -179,6 +179,9 @@ namespace Ajustee
             ValidateProperties(properties);
             ValidateProperties(Settings.DefaultProperties);
 
+            // Try merge properties
+            properties = GetMergedProperties(Settings.DefaultProperties, properties);
+
             if (!m_Initialized)
                 InitializAsync().GetAwaiter().GetResult();
 
@@ -196,6 +199,13 @@ namespace Ajustee
 
         public async Task SubscribeAsyncInternal(string path, IDictionary<string, string> properties, CancellationToken cancellationToken)
         {
+            // Validate properties.
+            ValidateProperties(properties);
+            ValidateProperties(Settings.DefaultProperties);
+
+            // Try merge properties
+            properties = GetMergedProperties(Settings.DefaultProperties, properties);
+
             if (!m_Initialized)
                 await InitializAsync();
 

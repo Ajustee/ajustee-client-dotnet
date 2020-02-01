@@ -19,10 +19,6 @@ namespace Ajustee
 
         private static readonly Uri m_API_URL = new Uri("https://b3bke9zpxg.execute-api.us-west-2.amazonaws.com/fo/configurationKeys?path=");
         private const string APPLICATION_ID = "nLnoagp.mKQk1t2YEfs5RlrPbcXrjg~8";
-        //private static readonly Uri m_API_URL = new Uri("https://api.beta.ajustee.com/configurationKeys");
-        //private const string APPLICATION_ID = "nGN.agafP3fy7HbhEbfpVQqpOD0BQNzg";
-        //private static readonly Uri m_API_URL = new Uri("https://api.ajustee.com");
-        //private const string APPLICATION_ID = "nGN.bM3DZFXZhEh4dZ8qHW7sBdmLuibW9Wy0";
 
         #endregion
 
@@ -42,6 +38,19 @@ namespace Ajustee
         #endregion
 
         #region Test methods
+
+        [Theory]
+        [InlineData("https://api.ajustee.com", "", "https://api.ajustee.com/configurationKeys?path=")]
+        [InlineData("https://api.ajustee.com/", "", "https://api.ajustee.com/configurationKeys?path=")]
+        [InlineData("https://api.ajustee.com", "mypath", "https://api.ajustee.com/configurationKeys?path=mypath")]
+        [InlineData("https://api.ajustee.com", "/mypath", "https://api.ajustee.com/configurationKeys?path=mypath")]
+        [InlineData("https://api.ajustee.com", "/mypath/", "https://api.ajustee.com/configurationKeys?path=mypath/")]
+        [InlineData("https://api.ajustee.com", "mypath/subpath", "https://api.ajustee.com/configurationKeys?path=mypath/subpath")]
+        public void GetConfigurationsUri(string apiUrl, string keyPath, string expectedUrl)
+        {
+            var _actualUri = Helper.GetConfigurationKeysUrl(new Uri(apiUrl), keyPath);
+            Assert.True(_actualUri == new Uri(expectedUrl));
+        }
 
         [Fact]
         public void GetConfigurations()

@@ -45,7 +45,7 @@ namespace Ajustee
             ValidateProperties(settings.DefaultProperties);
 
             // Adds the specified properties to the request message.
-            foreach (var _propertyEntry in GetMergedProperties(properties, settings.DefaultProperties))
+            foreach (var _propertyEntry in GetMergedProperties((IEnumerable<KeyValuePair<string, string>>)properties, settings.DefaultProperties))
                 _request.Headers.Add(_propertyEntry.Key, _propertyEntry.Value);
 
             return _request;
@@ -88,6 +88,9 @@ namespace Ajustee
 
             // Gets response.
             m_Response = m_Request.GetResponse();
+
+            // Validate status code, throw exception if it is not success.
+            ValidateResponseStatus((int?)(m_Response as HttpWebResponse)?.StatusCode ?? 0);
         }
 
 #if ASYNC
@@ -110,6 +113,9 @@ namespace Ajustee
 
             // Gets response.
             m_Response = await m_Request.GetResponseAsync();
+
+            // Validate status code, throw exception if it is not success.
+            ValidateResponseStatus((int?)(m_Response as HttpWebResponse)?.StatusCode ?? 0);
         }
 #endif
 

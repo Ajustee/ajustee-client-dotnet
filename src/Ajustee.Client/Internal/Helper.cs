@@ -15,8 +15,9 @@ namespace Ajustee
         #region Private fields region
 
         private const string m_ConfigurationKeysUrlTemplate = "configurationKeys?path={0}";
-        private const string m_UpdateUrlTemplate = "update{0}?value={1}";
+        private const string m_UpdateUrlTemplate = "configurationKeys/{0}";
         private const string m_WebSocketSchema = "wss";
+        private const int m_WebSocketPort = 443;
 
         private static readonly ConcurrentDictionary<Type, Func<object, IList<KeyValuePair<string, string>>>> m_ReflecteMethodCache = new ConcurrentDictionary<Type, Func<object, IList<KeyValuePair<string, string>>>>();
 
@@ -50,19 +51,16 @@ namespace Ajustee
 
         public static Uri GetConfigurationKeysUrl(Uri baseUri, string keyPath)
         {
-            if (baseUri.AbsoluteUri.EndsWith("/"))
-                baseUri = new Uri(baseUri.AbsoluteUri.TrimEnd('/'));
-            if (keyPath)
-            return new Uri(baseUri, string.Format(m_ConfigurationKeysUrlTemplate, keyPath));
+            if (!baseUri.AbsoluteUri.EndsWith("/"))
+                baseUri = new Uri(baseUri.AbsoluteUri + "/");
+            return new Uri(baseUri, string.Format(m_ConfigurationKeysUrlTemplate, keyPath.TrimStart('/')));
         }
 
-        public static Uri GetUpdateUrl(Uri baseUri, string keyPath, string value)
+        public static Uri GetUpdateUrl(Uri baseUri, string keyPath)
         {
-            if (baseUri.AbsoluteUri.EndsWith("/"))
-                baseUri = new Uri(baseUri.AbsoluteUri.TrimEnd('/'));
-            if (baseUri.AbsoluteUri.EndsWith("/"))
-                baseUri = new Uri(baseUri.AbsoluteUri.TrimEnd('/'));
-            return new Uri(baseUri, string.Format(m_UpdateUrlTemplate, keyPath));
+            if (!baseUri.AbsoluteUri.EndsWith("/"))
+                baseUri = new Uri(baseUri.AbsoluteUri + "/");
+            return new Uri(baseUri, string.Format(m_UpdateUrlTemplate, keyPath.TrimStart('/')));
         }
 
         public static Uri GetSubscribeUrl(Uri baseUri)
@@ -71,6 +69,8 @@ namespace Ajustee
             _uriBuilder.Scheme = m_WebSocketSchema;// Sets websocket secure schema
             if (_uriBuilder.Host.StartsWith("api."))
                 _uriBuilder.Host = "ws." + _uriBuilder.Host.Substring(4);
+            if (_uriBuilder.Port != m_WebSocketPort)
+                _uriBuilder.Port = m_WebSocketPort;
             return _uriBuilder.Uri;
         }
 
@@ -98,6 +98,52 @@ namespace Ajustee
         public static IEnumerable<KeyValuePair<string, string>> GetMergedProperties(params IEnumerable<KeyValuePair<string, string>>[] properties)
         {
             return properties.Where(ps => ps != null).SelectMany(ps => ps).GroupBy(ps => ps.Key, ps => ps.Value).Select(g => new KeyValuePair<string, string>(g.Key, g.First()));
+        }
+
+        public static IDictionary<string, string> GetMergedProperties(params IDictionary<string, string>[] properties)
+        {
+            switch (properties.Length)
+            {
+                case 0: return null;
+                case 1: return properties[0];
+                case 2:
+                    if (properties[0] == null) return properties[1];
+                    if (properties[1] == null) return properties[0];
+                    break;
+            }
+            var _merged = new Dictionary<string, string>();
+            foreach (var _entries in properties)
+            {
+                foreach (var _entry in _entries)
+                    _merged[_entry.Key] = _entry.Value;
+            }
+            return _merged;
+        }
+
+        public static void ValidateResponseStatus(int statusCode)
+        {
+            switch (statusCode)
+            {
+                case 400: // Bad Request
+                    throw Error.HttpBadRequestError();
+
+                case 401: // Unauthorized 
+                    throw Error.HttpUnauthorizedError();
+
+                case 402: // Payment Required
+                    throw Error.HttpPaymentRequiredError();
+
+                case 403: // Forbidden
+                    throw Error.HttpForbiddenError();
+
+                case 404: // Not Found
+                    throw Error.HttpNotFoundError();
+
+                default:
+                    if (statusCode > 404)
+                        throw Error.HttpServerError();
+                    break;
+            }
         }
 
         public static IList<KeyValuePair<string, string>> ReflectProperties(object obj)

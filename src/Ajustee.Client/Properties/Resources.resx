@@ -118,10 +118,16 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="ERR_CONFIGVALUE_CANNOT_BE_NULL" xml:space="preserve">
-    <value>Configuraltion value cannot be null referenced.</value>
+    <value>Configuration value cannot be null referenced.</value>
   </data>
   <data name="ERR_HTTP_BADREQUEST" xml:space="preserve">
     <value>Bad Request</value>
+  </data>
+  <data name="ERR_HTTP_UNAUTHORIZED" xml:space="preserve">
+    <value>Unauthorized</value>
+  </data>
+  <data name="ERR_HTTP_PAYMENT_REQUIRED" xml:space="preserve">
+    <value>Payment Required</value>
   </data>
   <data name="ERR_HTTP_FORBIDDEN" xml:space="preserve">
     <value>Forbidden</value>

@@ -26,6 +26,11 @@ namespace Ajustee
             return new AjusteeException(Resources.GetString("ERR_HTTP_INTERNAL"));
         }
 
+        internal static Exception HttpUnauthorizedError()
+        {
+            return new AjusteeException(Resources.GetString("ERR_HTTP_UNAUTHORIZED"));
+        }
+
         internal static Exception HttpForbiddenError()
         {
             return new AjusteeException(Resources.GetString("ERR_HTTP_FORBIDDEN"));
@@ -39,6 +44,11 @@ namespace Ajustee
         internal static Exception HttpNotFoundError()
         {
             return new AjusteeException(Resources.GetString("ERR_HTTP_NOTFOUND"));
+        }
+
+        internal static Exception HttpPaymentRequiredError()
+        {
+            return new AjusteeException(Resources.GetString("ERR_HTTP_PAYMENT_REQUIRED"));
         }
 
         #endregion
