@@ -24,11 +24,13 @@ namespace Ajustee
                 if (m_ResourceManager is null)
                 {
 #if NETSTANDARD
-                    var _assembly = System.Reflection.IntrospectionExtensions.GetTypeInfo(typeof(Resources)).Assembly;
+                    var _resourcesType = typeof(Resources);
+                    var _assembly = System.Reflection.IntrospectionExtensions.GetTypeInfo(_resourcesType).Assembly;
 #else
-                    var _assembly = typeof(Resources).Assembly;
+                    var _resourcesType = typeof(Resources);
+                    var _assembly = _resourcesType.Assembly;
 #endif
-                    m_ResourceManager = new ResourceManager("Ajustee.Properties.Resources", _assembly);
+                    m_ResourceManager = new ResourceManager(_resourcesType.FullName, _assembly);
                 }
                 return m_ResourceManager;
             }

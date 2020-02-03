@@ -95,27 +95,32 @@ namespace Ajustee
             }
         }
 
-        public static IEnumerable<KeyValuePair<string, string>> GetMergedProperties(params IEnumerable<KeyValuePair<string, string>>[] properties)
-        {
-            return properties.Where(ps => ps != null).SelectMany(ps => ps).GroupBy(ps => ps.Key, ps => ps.Value).Select(g => new KeyValuePair<string, string>(g.Key, g.First()));
-        }
-
         public static IDictionary<string, string> GetMergedProperties(params IDictionary<string, string>[] properties)
         {
+            if (properties == null || properties.Length == 0)
+                throw new ArgumentException("No properties");
+
             switch (properties.Length)
             {
                 case 0: return null;
                 case 1: return properties[0];
                 case 2:
-                    if (properties[0] == null) return properties[1];
-                    if (properties[1] == null) return properties[0];
+                    if (properties[0] == null || properties[0].Count == 0) return properties[1];
+                    if (properties[1] == null || properties[1].Count == 0) return properties[0];
                     break;
             }
-            var _merged = new Dictionary<string, string>();
+
+            Dictionary<string, string> _merged = null;
             foreach (var _entries in properties)
             {
-                foreach (var _entry in _entries)
-                    _merged[_entry.Key] = _entry.Value;
+                if (_entries == null) continue;
+                if (_merged == null)
+                    _merged = new Dictionary<string, string>(_entries);
+                else
+                {
+                    foreach (var _entry in _entries)
+                        _merged[_entry.Key] = _entry.Value;
+                }
             }
             return _merged;
         }

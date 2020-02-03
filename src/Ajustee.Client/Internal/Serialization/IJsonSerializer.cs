@@ -9,6 +9,8 @@ namespace Ajustee
 
         string Serialize(object obj);
 
+        void Serialize(object obj, Stream toStream);
+
         T Deserialize<T>(string json);
 
         T Deserialize<T>(Stream jsonStream);

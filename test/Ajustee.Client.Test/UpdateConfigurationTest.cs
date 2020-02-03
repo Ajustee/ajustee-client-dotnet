@@ -37,20 +37,6 @@ namespace Ajustee
 
         #region Test methods
 
-        [Theory]
-        [InlineData("https://api.ajustee.com", "", "https://api.ajustee.com/configurationKeys/")]
-        [InlineData("https://api.ajustee.com/", "", "https://api.ajustee.com/configurationKeys/")]
-        [InlineData("https://api.ajustee.com/path", "", "https://api.ajustee.com/path/configurationKeys/")]
-        [InlineData("https://api.ajustee.com", "mypath", "https://api.ajustee.com/configurationKeys/mypath")]
-        [InlineData("https://api.ajustee.com", "/mypath", "https://api.ajustee.com/configurationKeys/mypath")]
-        [InlineData("https://api.ajustee.com", "/mypath/", "https://api.ajustee.com/configurationKeys/mypath/")]
-        [InlineData("https://api.ajustee.com", "mypath/subpath", "https://api.ajustee.com/configurationKeys/mypath/subpath")]
-        public void GetConfigurationsUri(string apiUrl, string keyPath, string expectedUrl)
-        {
-            var _actualUri = Helper.GetUpdateUrl(new Uri(apiUrl), keyPath);
-            Assert.True(_actualUri == new Uri(expectedUrl));
-        }
-
         [Fact]
         public void Update()
         {

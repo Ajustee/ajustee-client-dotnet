@@ -26,15 +26,21 @@ namespace Ajustee
 
             // Adds headers of specify customers.
             _message.Headers.Add(AppIdName, settings.ApplicationId);
-            if (settings.TrackerId != null) _message.Headers.Add(TrackerIdName, FormatPropertyValue(settings.TrackerId));
 
             // Validate properties.
-            ValidateProperties(properties);
             ValidateProperties(settings.DefaultProperties);
+            ValidateProperties(properties);
+
+            // Gets merged properties
+            properties = GetMergedProperties(settings.TrackerId == null ? null : new Dictionary<string, string> { { TrackerIdName, FormatPropertyValue(settings.TrackerId) } },
+                settings.DefaultProperties, properties);
 
             // Adds the specified properties to the request message.
-            foreach (var _propertyEntry in GetMergedProperties((IEnumerable<KeyValuePair<string, string>>)properties, settings.DefaultProperties))
-                _message.Headers.Add(_propertyEntry.Key, _propertyEntry.Value);
+            if (properties != null)
+            {
+                foreach (var _property in properties)
+                    _message.Headers.Add(_property.Key, _property.Value);
+            }
 
             return _message;
         }

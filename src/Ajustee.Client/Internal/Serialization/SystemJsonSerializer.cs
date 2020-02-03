@@ -34,6 +34,12 @@ namespace Ajustee
             return JsonSerializer.Serialize(obj, obj.GetType(), m_JsonOptions);
         }
 
+        public void Serialize(object obj, Stream toStream)
+        {
+            using var _writer = new Utf8JsonWriter(toStream);
+            JsonSerializer.Serialize(_writer, obj);
+        }
+
         public T Deserialize<T>(string json)
         {
             return JsonSerializer.Deserialize<T>(json, m_JsonOptions);
