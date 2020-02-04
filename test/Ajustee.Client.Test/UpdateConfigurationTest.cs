@@ -24,11 +24,11 @@ namespace Ajustee
 
         #region Private methods region
 
-        private static AjusteeClient CreateClient(bool skipAppId = false)
+        private static AjusteeClient CreateClient(bool skipApiUrl = false, bool skipAppId = false)
         {
             return new AjusteeClient(new AjusteeConnectionSettings
             {
-                ApiUrl = m_API_URL,
+                ApiUrl = skipApiUrl ? null : m_API_URL,
                 ApplicationId = skipAppId ? null : APPLICATION_ID,
             });
         }
@@ -57,17 +57,21 @@ namespace Ajustee
         }
 
         [Theory]
-        [InlineData("namespace1/key1", true, "1")]
-        public void InvalidUpdateConfiguration(string path, bool skipAppId, string value)
+        [InlineData("namespace1/key1", true, false, "1", AjusteeErrorCode.NotValid)]
+        [InlineData("namespace1/key1", false, true, "1", AjusteeErrorCode.NotValid)]
+        [InlineData(null, false, false, "1", AjusteeErrorCode.NotValid)]
+        public void InvalidUpdateConfiguration(string path, bool skipApiUrl, bool skipAppId, string value, AjusteeErrorCode expectedError)
         {
-            using var _client = CreateClient(skipAppId: skipAppId);
+            using var _client = CreateClient(skipAppId: skipAppId, skipApiUrl: skipApiUrl);
             try
             {
                 _client.Update(path, value);
                 Assert.True(false, "Expecting ajustee exception");
             }
-            catch (AjusteeException)
-            { }
+            catch (AjusteeException _ex)
+            {
+                Assert.True(expectedError == _ex.ErrorCode);
+            }
         }
 
 #if ASYNC

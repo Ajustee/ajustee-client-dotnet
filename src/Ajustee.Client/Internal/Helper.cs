@@ -25,6 +25,7 @@ namespace Ajustee
 
         #region Public fields region
 
+        public const string HelpUrl = "https://help.ajustee.com/article/15-retrieving-configuration-in-net";
         public const string AppIdName = "x-api-key";
         public const string KeyPathName = "x-key-path";
         public const string KeyPropsName = "x-key-props";
@@ -51,13 +52,18 @@ namespace Ajustee
 
         public static Uri GetConfigurationKeysUrl(Uri baseUri, string keyPath)
         {
+            if (baseUri == null) throw Error.InvalidApiUrl(baseUri);
+
             if (!baseUri.AbsoluteUri.EndsWith("/"))
                 baseUri = new Uri(baseUri.AbsoluteUri + "/");
-            return new Uri(baseUri, string.Format(m_ConfigurationKeysUrlTemplate, keyPath.TrimStart('/')));
+            return new Uri(baseUri, string.Format(m_ConfigurationKeysUrlTemplate, keyPath?.TrimStart('/')));
         }
 
         public static Uri GetUpdateUrl(Uri baseUri, string keyPath)
         {
+            if (baseUri == null) throw Error.InvalidApiUrl(baseUri);
+            if (string.IsNullOrEmpty(keyPath)) throw Error.InvalidKeyPath(keyPath);
+
             if (!baseUri.AbsoluteUri.EndsWith("/"))
                 baseUri = new Uri(baseUri.AbsoluteUri + "/");
             return new Uri(baseUri, string.Format(m_UpdateUrlTemplate, keyPath.TrimStart('/')));
@@ -65,6 +71,8 @@ namespace Ajustee
 
         public static Uri GetSubscribeUrl(Uri baseUri)
         {
+            if (baseUri == null) throw Error.InvalidApiUrl(baseUri);
+
             var _uriBuilder = new UriBuilder(baseUri);
             _uriBuilder.Scheme = m_WebSocketSchema;// Sets websocket secure schema
             if (_uriBuilder.Host.StartsWith("api."))
@@ -125,28 +133,31 @@ namespace Ajustee
             return _merged;
         }
 
-        public static void ValidateResponseStatus(int statusCode)
+        public static void ValidateResponseStatus(int? statusCode, AjusteeConnectionSettings settings, Exception innerException)
         {
-            switch (statusCode)
+            switch (statusCode ?? 500)
             {
                 case 400: // Bad Request
-                    throw Error.HttpBadRequestError();
+                    throw Error.InvalidRequest();
 
                 case 401: // Unauthorized 
-                    throw Error.HttpUnauthorizedError();
+                    throw Error.InvalidApplication(settings.ApplicationId);
 
                 case 402: // Payment Required
-                    throw Error.HttpPaymentRequiredError();
+                    throw Error.ReachedLimit();
 
                 case 403: // Forbidden
-                    throw Error.HttpForbiddenError();
+                    throw Error.Forbidden();
 
                 case 404: // Not Found
-                    throw Error.HttpNotFoundError();
+                    throw Error.NotFound("Key path");
+
+                case 503: // Service Unavailable
+                    throw Error.InvalidApiUrl(settings.ApiUrl);
 
                 default:
                     if (statusCode > 404)
-                        throw Error.HttpServerError();
+                        throw Error.Unknown(innerException);
                     break;
             }
         }

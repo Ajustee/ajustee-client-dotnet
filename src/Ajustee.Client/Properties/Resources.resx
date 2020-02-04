@@ -120,28 +120,40 @@
   <data name="ERR_CONFIGVALUE_CANNOT_BE_NULL" xml:space="preserve">
     <value>Configuration value cannot be null referenced.</value>
   </data>
-  <data name="ERR_HTTP_BADREQUEST" xml:space="preserve">
-    <value>Bad Request</value>
+  <data name="ERR_INVALID_REQUEST" xml:space="preserve">
+    <value>Invalid request inputs.</value>
   </data>
-  <data name="ERR_HTTP_UNAUTHORIZED" xml:space="preserve">
-    <value>Unauthorized</value>
+  <data name="ERR_INVALID_KEYPATH" xml:space="preserve">
+    <value>Invalid key path '{0}'.</value>
   </data>
-  <data name="ERR_HTTP_PAYMENT_REQUIRED" xml:space="preserve">
-    <value>Payment Required</value>
+  <data name="ERR_MISSING_APIURL" xml:space="preserve">
+    <value>Missing api url.</value>
   </data>
-  <data name="ERR_HTTP_FORBIDDEN" xml:space="preserve">
-    <value>Forbidden</value>
+  <data name="ERR_MISSING_APPLICATION" xml:space="preserve">
+    <value>Missing application id.</value>
   </data>
-  <data name="ERR_HTTP_INTERNAL" xml:space="preserve">
-    <value>Internal Server Error</value>
+  <data name="ERR_INVALID_APPLICATION" xml:space="preserve">
+    <value>Invalid application id '{0}'.</value>
   </data>
-  <data name="ERR_HTTP_NOTFOUND" xml:space="preserve">
-    <value>Not Found</value>
+  <data name="ERR_REACHED_LIMIT" xml:space="preserve">
+    <value>Limit reached.</value>
+  </data>
+  <data name="ERR_FORBIDDEN" xml:space="preserve">
+    <value>No necessary permissions for a resource.</value>
+  </data>
+  <data name="ERR_UNKNOWN" xml:space="preserve">
+    <value>Unknown error.</value>
+  </data>
+  <data name="ERR_NOTFOUND" xml:space="preserve">
+    <value>{0} not found.</value>
   </data>
   <data name="ERR_INVALID_PROPERTY_NAME" xml:space="preserve">
     <value>Invalid property name '{0}'.</value>
   </data>
   <data name="ERR_RESERVER_PROPERTY_NAME" xml:space="preserve">
     <value>Reserved property name '{0}', use another property name.</value>
+  </data>
+  <data name="ERR_SERVICE_UNAVAILABLE" xml:space="preserve">
+    <value>The server cannot handled, api-url: '{0}'.</value>
   </data>
 </root>

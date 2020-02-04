@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
@@ -92,24 +93,38 @@ namespace Ajustee
         {
             // Initializes http client instance.
             m_Client = new HttpClient();
+            try
+            {
+                // Create message and send to a server.
+                m_Response = m_Client.SendAsync(CreateUpdateRequestMessage(settings, path, value)).GetAwaiter().GetResult();
 
-            // Create message and send to a server.
-            m_Response = m_Client.SendAsync(CreateUpdateRequestMessage(settings, path, value)).GetAwaiter().GetResult();
-
-            // Validate status code, throw exception if it is not success.
-            ValidateResponseStatus((int)m_Response.StatusCode);
+                // Validate status code, throw exception if it is not success.
+                ValidateResponseStatus((int)m_Response.StatusCode, settings, null);
+            }
+            catch (Exception _ex)
+            {
+                // Validate status code, throw exception if it is not success.
+                ValidateResponseStatus((int)m_Response.StatusCode, settings, _ex);
+            }
         }
 
         public async Task UpdateAsync(AjusteeConnectionSettings settings, string path, string value, CancellationToken cancellationToken = default)
         {
             // Initializes http client instance.
             m_Client = new HttpClient();
+            try
+            {
+                // Create message and send to a server.
+                m_Response = await m_Client.SendAsync(CreateUpdateRequestMessage(settings, path, value));
 
-            // Create message and send to a server.
-            m_Response = await m_Client.SendAsync(CreateUpdateRequestMessage(settings, path, value));
-
-            // Validate status code, throw exception if it is not success.
-            ValidateResponseStatus((int)m_Response.StatusCode);
+                // Validate status code, throw exception if it is not success.
+                ValidateResponseStatus((int)m_Response.StatusCode, settings, null);
+            }
+            catch (Exception _ex)
+            {
+                // Validate status code, throw exception if it is not success.
+                ValidateResponseStatus((int)m_Response.StatusCode, settings, _ex);
+            }
         }
 
         public void Dispose()
