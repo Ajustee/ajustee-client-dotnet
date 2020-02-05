@@ -2,7 +2,7 @@
 
 namespace Ajustee
 {
-    public delegate void AjusteeConfigKeyChangedEventHandler(object ssender, AjusteeConfigKeyChangedEventArgs args);
+    public delegate void AjusteeConfigKeyChangedEventHandler(object sender, AjusteeConfigKeyChangedEventArgs args);
 
     public class AjusteeConfigKeyChangedEventArgs
     {

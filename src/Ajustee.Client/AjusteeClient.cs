@@ -99,6 +99,14 @@ namespace Ajustee
             return m_JsonSerializer.Deserialize<IEnumerable<ConfigKey>>(_stream);
         }
 
+        public void Update(string path, string value)
+        {
+            using var _requst = ApiRequestFactory.Create();
+
+            // Updates the config key value.
+            _requst.Update(Settings, path, value);
+        }
+
 #if ASYNC
         public async System.Threading.Tasks.Task<IEnumerable<ConfigKey>> GetConfigurationsAsync(System.Threading.CancellationToken cancellationToken = default)
         {
@@ -120,10 +128,18 @@ namespace Ajustee
             using var _requst = ApiRequestFactory.Create();
 
             // Requests and response stream
-            using var _stream = await _requst.GetStreamAsync(Settings, path, properties);
+            using var _stream = await _requst.GetStreamAsync(Settings, path, properties, cancellationToken: cancellationToken);
 
             // Deserialize stream and returns.
             return await m_JsonSerializer.DeserializeAsync<IEnumerable<ConfigKey>>(_stream);
+        }
+
+        public async System.Threading.Tasks.Task UpdateAsync(string path, string value, System.Threading.CancellationToken cancellationToken = default)
+        {
+            using var _requst = ApiRequestFactory.Create();
+
+            // Updates the config key value.
+            await _requst.UpdateAsync(Settings, path, value, cancellationToken: cancellationToken);
         }
 #endif
 

@@ -27,13 +27,6 @@ namespace Ajustee
         }
 
         [Fact]
-        public void SubscriptionUri()
-        {
-            var _wssUri = Helper.GetSubscribeUrl(new Uri("https://api.ajustee.com/"));
-            Assert.True(_wssUri == new Uri("wss://ws.ajustee.com/"));
-        }
-
-        [Fact]
         public void Subscribe()
         {
             using var _client = CreateClient();

@@ -17,12 +17,8 @@ namespace Ajustee
     {
         #region Private field region
 
-        private static readonly Uri m_API_URL = new Uri("https://b3bke9zpxg.execute-api.us-west-2.amazonaws.com/fo/configurationKeys?path=");
+        private static readonly Uri m_API_URL = new Uri("https://b3bke9zpxg.execute-api.us-west-2.amazonaws.com/fo2");
         private const string APPLICATION_ID = "nLnoagp.mKQk1t2YEfs5RlrPbcXrjg~8";
-        //private static readonly Uri m_API_URL = new Uri("https://api.beta.ajustee.com/configurationKeys");
-        //private const string APPLICATION_ID = "nGN.agafP3fy7HbhEbfpVQqpOD0BQNzg";
-        //private static readonly Uri m_API_URL = new Uri("https://api.ajustee.com");
-        //private const string APPLICATION_ID = "nGN.bM3DZFXZhEh4dZ8qHW7sBdmLuibW9Wy0";
 
         #endregion
 

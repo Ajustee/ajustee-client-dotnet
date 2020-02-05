@@ -1,12 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace Ajustee.Tools
 {
-    public class AtlConsoleTraceListener : TraceListener
+    internal class ATLConsoleTraceListener : TraceListener
     {
         public readonly object m_SyncRoot = new object();
+
+        public ATLConsoleTraceListener()
+            : base()
+        {
+            typeof(AjusteeClient).Assembly.GetType("Ajustee.ATL").GetProperty("Enabled", BindingFlags.Static | BindingFlags.Public).SetValue(null, true);
+        }
 
         public bool TryTrace(ref string message)
         {

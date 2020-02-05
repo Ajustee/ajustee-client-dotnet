@@ -19,22 +19,43 @@ namespace Ajustee
 
         #region Private methods region
 
-        private static HttpRequestMessage CreateRequestMessage(AjusteeConnectionSettings settings, string path, IDictionary<string, string> properties)
+        private static HttpRequestMessage CreateGetRequestMessage(AjusteeConnectionSettings settings, string path, IDictionary<string, string> properties)
         {
             // Creates get http request with api url and specified configuration path.
             var _message = new HttpRequestMessage(HttpMethod.Get, GetConfigurationKeysUrl(settings.ApiUrl, path ?? settings.DefaultPath));
 
             // Adds headers of specify customers.
             _message.Headers.Add(AppIdName, settings.ApplicationId);
-            if (settings.TrackerId != null) _message.Headers.Add(TrackerIdName, FormatPropertyValue(settings.TrackerId));
 
             // Validate properties.
-            ValidateProperties(properties);
             ValidateProperties(settings.DefaultProperties);
+            ValidateProperties(properties);
+
+            // Gets merged properties
+            properties = GetMergedProperties(settings.TrackerId == null ? null : new Dictionary<string, string> { { TrackerIdName, FormatPropertyValue(settings.TrackerId) } },
+                settings.DefaultProperties, properties);
 
             // Adds the specified properties to the request message.
-            foreach (var _propertyEntry in GetMergedProperties(properties, settings.DefaultProperties))
-                _message.Headers.Add(_propertyEntry.Key, _propertyEntry.Value);
+            if (properties != null)
+            {
+                foreach (var _property in properties)
+                    _message.Headers.Add(_property.Key, _property.Value);
+            }
+
+            return _message;
+        }
+
+        private static HttpRequestMessage CreateUpdateRequestMessage(AjusteeConnectionSettings settings, string path, string value)
+        {
+            // Creates get http request with api url and specified configuration path.
+            var _message = new HttpRequestMessage(HttpMethod.Put, GetUpdateUrl(settings.ApiUrl, path));
+
+            // Adds headers of specify customers.
+            _message.Headers.Add(AppIdName, settings.ApplicationId);
+            if (settings.TrackerId != null) _message.Headers.Add(TrackerIdName, FormatPropertyValue(settings.TrackerId));
+
+            // Sets update value payload.
+            _message.Content = new StringContent(JsonSerializer.Serialize(new RequestUpdateContent(value)), MessageEncoding, "application/json");
 
             return _message;
         }
@@ -49,7 +70,10 @@ namespace Ajustee
             m_Client = new HttpClient();
 
             // Create message and send to a server.
-            m_Response = m_Client.SendAsync(CreateRequestMessage(settings, path, properties)).Result;
+            m_Response = m_Client.SendAsync(CreateGetRequestMessage(settings, path, properties)).GetAwaiter().GetResult();
+
+            // Validate status code, throw exception if it is not success.
+            ValidateResponseStatus((int)m_Response.StatusCode, settings, null);
 
             // Returns streamed payload of the configurations.
             return m_Response.Content.ReadAsStreamAsync().Result;
@@ -61,10 +85,37 @@ namespace Ajustee
             m_Client = new HttpClient();
 
             // Create message and send to a server.
-            m_Response = await m_Client.SendAsync(CreateRequestMessage(settings, path, properties));
+            m_Response = await m_Client.SendAsync(CreateGetRequestMessage(settings, path, properties));
+
+            // Validate status code, throw exception if it is not success.
+            ValidateResponseStatus((int)m_Response.StatusCode, settings, null);
 
             // Returns streamed payload of the configurations.
             return await m_Response.Content.ReadAsStreamAsync();
+        }
+
+        public void Update(AjusteeConnectionSettings settings, string path, string value)
+        {
+            // Initializes http client instance.
+            m_Client = new HttpClient();
+
+            // Create message and send to a server.
+            m_Response = m_Client.SendAsync(CreateUpdateRequestMessage(settings, path, value)).GetAwaiter().GetResult();
+
+            // Validate status code, throw exception if it is not success.
+            ValidateResponseStatus((int)m_Response.StatusCode, settings, null);
+        }
+
+        public async Task UpdateAsync(AjusteeConnectionSettings settings, string path, string value, CancellationToken cancellationToken = default)
+        {
+            // Initializes http client instance.
+            m_Client = new HttpClient();
+
+            // Create message and send to a server.
+            m_Response = await m_Client.SendAsync(CreateUpdateRequestMessage(settings, path, value));
+
+            // Validate status code, throw exception if it is not success.
+            ValidateResponseStatus((int)m_Response.StatusCode, settings, null);
         }
 
         public void Dispose()

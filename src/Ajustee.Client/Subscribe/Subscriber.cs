@@ -176,8 +176,12 @@ namespace Ajustee
         public void SubscribeInternal(string path, IDictionary<string, string> properties, CancellationToken cancellationToken)
         {
             // Validate properties.
-            ValidateProperties(properties);
             ValidateProperties(Settings.DefaultProperties);
+            ValidateProperties(properties);
+
+            // Get merged properties.
+            properties = GetMergedProperties(Settings.TrackerId == null ? null : new Dictionary<string, string> { { TrackerIdName, FormatPropertyValue(Settings.TrackerId) } },
+                Settings.DefaultProperties, properties);
 
             if (!m_Initialized)
                 InitializAsync().GetAwaiter().GetResult();
@@ -196,6 +200,14 @@ namespace Ajustee
 
         public async Task SubscribeAsyncInternal(string path, IDictionary<string, string> properties, CancellationToken cancellationToken)
         {
+            // Validate properties.
+            ValidateProperties(Settings.DefaultProperties);
+            ValidateProperties(properties);
+
+            // Get merged properties.
+            properties = GetMergedProperties(Settings.TrackerId == null ? null : new Dictionary<string, string> { { TrackerIdName, FormatPropertyValue(Settings.TrackerId) } },
+                Settings.DefaultProperties, properties);
+
             if (!m_Initialized)
                 await InitializAsync();
 

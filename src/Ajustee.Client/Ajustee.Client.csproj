@@ -67,6 +67,9 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <LogicalName>Ajustee.Resources.resources</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>    
 
 </Project>
