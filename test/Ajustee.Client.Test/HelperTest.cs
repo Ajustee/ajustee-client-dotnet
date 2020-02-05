@@ -27,9 +27,6 @@ namespace Ajustee
         }
 
         [Theory]
-        [InlineData("https://api.ajustee.com", "", "https://api.ajustee.com/configurationKeys/")]
-        [InlineData("https://api.ajustee.com/", "", "https://api.ajustee.com/configurationKeys/")]
-        [InlineData("https://api.ajustee.com/path", "", "https://api.ajustee.com/path/configurationKeys/")]
         [InlineData("https://api.ajustee.com", "mypath", "https://api.ajustee.com/configurationKeys/mypath")]
         [InlineData("https://api.ajustee.com", "/mypath", "https://api.ajustee.com/configurationKeys/mypath")]
         [InlineData("https://api.ajustee.com", "/mypath/", "https://api.ajustee.com/configurationKeys/mypath/")]
@@ -38,6 +35,22 @@ namespace Ajustee
         {
             var _actualUri = Helper.GetUpdateUrl(new Uri(apiUrl), keyPath);
             Assert.True(_actualUri == new Uri(expectedUrl));
+        }
+
+        [Theory]
+        [InlineData("https://api.ajustee.com", null)]
+        [InlineData("https://api.ajustee.com", "")]
+        [InlineData("https://api.ajustee.com/", "")]
+        [InlineData("https://api.ajustee.com/path", "")]
+        public void GetUpdateUrlInvalid(string apiUrl, string keyPath)
+        {
+            try
+            {
+                Helper.GetUpdateUrl(new Uri(apiUrl), keyPath);
+                Assert.True(false, "Should raised invalid exception.");
+            }
+            catch (AjusteeException _ex) when (_ex.ErrorCode == AjusteeErrorCode.Invalid)
+            { }
         }
 
         [Theory]
@@ -59,7 +72,7 @@ namespace Ajustee
             try
             {
                 _props = Helper.GetMergedProperties();
-                Assert.True(true, "Should raised argument exception.");
+                Assert.True(false, "Should raised argument exception.");
             }
             catch (ArgumentException)
             { }

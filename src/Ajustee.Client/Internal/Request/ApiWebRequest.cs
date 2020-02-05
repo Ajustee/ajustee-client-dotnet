@@ -81,8 +81,16 @@ namespace Ajustee
             // Creates request.
             m_Request = CreateGetRequest(settings, path, properties);
 
-            // Gets response.
-            m_Response = m_Request.GetResponse();
+            try
+            {
+                // Gets response.
+                m_Response = m_Request.GetResponse();
+            }
+            catch (WebException _ex)
+            {
+                // Validate status code, throw exception if it is not success.
+                ValidateResponseStatus((int)((HttpWebResponse)_ex.Response).StatusCode, settings, _ex);
+            }
 
             // Returns response's stream.
             return m_Response.GetResponseStream();
@@ -100,14 +108,11 @@ namespace Ajustee
             {
                 // Gets response.
                 m_Response = m_Request.GetResponse();
-
-                // Validate status code, throw exception if it is not success.
-                ValidateResponseStatus((int?)(m_Response as HttpWebResponse)?.StatusCode, settings, null);
             }
-            catch (Exception _ex)
+            catch (WebException _ex)
             {
                 // Validate status code, throw exception if it is not success.
-                ValidateResponseStatus((int?)((_ex as WebException)?.Response as HttpWebResponse)?.StatusCode, settings, _ex);
+                ValidateResponseStatus((int)((HttpWebResponse)_ex.Response).StatusCode, settings, _ex);
             }
         }
 
@@ -119,6 +124,9 @@ namespace Ajustee
 
             // Gets response.
             m_Response = await m_Request.GetResponseAsync();
+
+            // Validate status code, throw exception if it is not success.
+            ValidateResponseStatus((int)((HttpWebResponse)m_Response).StatusCode, settings, null);
 
             // Returns response's stream.
             return m_Response.GetResponseStream();
@@ -136,14 +144,11 @@ namespace Ajustee
             {
                 // Gets response.
                 m_Response = await m_Request.GetResponseAsync();
-
-                // Validate status code, throw exception if it is not success.
-                ValidateResponseStatus((int?)(m_Response as HttpWebResponse)?.StatusCode, settings, null);
             }
-            catch (Exception _ex)
+            catch (WebException _ex)
             {
                 // Validate status code, throw exception if it is not success.
-                ValidateResponseStatus((int?)((_ex as WebException)?.Response as HttpWebResponse)?.StatusCode, settings, _ex);
+                ValidateResponseStatus((int)((HttpWebResponse)_ex.Response).StatusCode, settings, _ex);
             }
         }
 #endif

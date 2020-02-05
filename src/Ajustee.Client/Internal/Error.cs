@@ -8,22 +8,22 @@ namespace Ajustee
 
         internal static Exception InvalidKeyPath(string keyPath)
         {
-            return new AjusteeException(string.Format(Resources.GetString("ERR_INVALID_KEYPATH"), keyPath), AjusteeErrorCode.NotValid);
+            return new AjusteeException(string.Format(Resources.GetString("ERR_INVALID_KEYPATH"), keyPath), AjusteeErrorCode.Invalid);
         }
 
         internal static Exception InvalidPropertyName(string propertyName)
         {
-            return new AjusteeException(string.Format(Resources.GetString("ERR_INVALID_PROPERTY_NAME"), propertyName), AjusteeErrorCode.NotValid);
+            return new AjusteeException(string.Format(Resources.GetString("ERR_INVALID_PROPERTY_NAME"), propertyName), AjusteeErrorCode.Invalid);
         }
 
         internal static Exception ReservedPropertyName(string propertyName)
         {
-            return new AjusteeException(string.Format(Resources.GetString("ERR_RESERVER_PROPERTY_NAME"), propertyName), AjusteeErrorCode.NotValid);
+            return new AjusteeException(string.Format(Resources.GetString("ERR_RESERVER_PROPERTY_NAME"), propertyName), AjusteeErrorCode.Invalid);
         }
 
         internal static Exception ConfigValueCannotBeNull()
         {
-            return new AjusteeException(Resources.GetString("ERR_CONFIGVALUE_CANNOT_BE_NULL"), AjusteeErrorCode.NotValid);
+            return new AjusteeException(Resources.GetString("ERR_CONFIGVALUE_CANNOT_BE_NULL"), AjusteeErrorCode.Invalid);
         }
 
         internal static Exception Unknown(Exception innerException)
@@ -34,7 +34,7 @@ namespace Ajustee
         internal static Exception InvalidApplication(string applicationId)
         {
             if (string.IsNullOrEmpty(applicationId))
-                return new AjusteeException(Resources.GetString("ERR_MISSING_APPLICATION"), AjusteeErrorCode.NotValid);
+                return new AjusteeException(Resources.GetString("ERR_MISSING_APPLICATION"), AjusteeErrorCode.Invalid);
             else
                 return new AjusteeException(string.Format(Resources.GetString("ERR_INVALID_APPLICATION"), applicationId), AjusteeErrorCode.Forbidden);
         }
@@ -46,7 +46,7 @@ namespace Ajustee
 
         internal static Exception InvalidRequest()
         {
-            return new AjusteeException(Resources.GetString("ERR_INVALID_REQUEST"), AjusteeErrorCode.NotValid);
+            return new AjusteeException(Resources.GetString("ERR_INVALID_REQUEST"), AjusteeErrorCode.Invalid);
         }
 
         internal static Exception NotFound(string resourceName)
@@ -62,9 +62,9 @@ namespace Ajustee
         internal static Exception InvalidApiUrl(Uri apiUrl)
         {
             if (apiUrl == null)
-                return new AjusteeException(Resources.GetString("ERR_MISSING_APIURL"), AjusteeErrorCode.NotValid);
+                return new AjusteeException(Resources.GetString("ERR_MISSING_APIURL"), AjusteeErrorCode.Invalid);
             else
-                return new AjusteeException(string.Format(Resources.GetString("ERR_SERVICE_UNAVAILABLE"), apiUrl), AjusteeErrorCode.NotValid);
+                return new AjusteeException(string.Format(Resources.GetString("ERR_SERVICE_UNAVAILABLE"), apiUrl), AjusteeErrorCode.Invalid);
         }
 
         #endregion

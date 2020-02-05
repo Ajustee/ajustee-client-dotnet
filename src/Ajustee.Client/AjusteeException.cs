@@ -59,7 +59,7 @@ namespace Ajustee
         /// <summary>
         /// Invalid request data.
         /// </summary>
-        NotValid,
+        Invalid,
         /// <summary>
         /// Other unknown errors
         /// </summary>

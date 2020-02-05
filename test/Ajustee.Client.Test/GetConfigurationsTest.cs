@@ -17,7 +17,7 @@ namespace Ajustee
     {
         #region Private field region
 
-        private static readonly Uri m_API_URL = new Uri("https://b3bke9zpxg.execute-api.us-west-2.amazonaws.com/fo/configurationKeys?path=");
+        private static readonly Uri m_API_URL = new Uri("https://b3bke9zpxg.execute-api.us-west-2.amazonaws.com/fo2");
         private const string APPLICATION_ID = "nLnoagp.mKQk1t2YEfs5RlrPbcXrjg~8";
 
         #endregion
@@ -38,19 +38,6 @@ namespace Ajustee
         #endregion
 
         #region Test methods
-
-        [Theory]
-        [InlineData("https://api.ajustee.com", "", "https://api.ajustee.com/configurationKeys?path=")]
-        [InlineData("https://api.ajustee.com/", "", "https://api.ajustee.com/configurationKeys?path=")]
-        [InlineData("https://api.ajustee.com", "mypath", "https://api.ajustee.com/configurationKeys?path=mypath")]
-        [InlineData("https://api.ajustee.com", "/mypath", "https://api.ajustee.com/configurationKeys?path=mypath")]
-        [InlineData("https://api.ajustee.com", "/mypath/", "https://api.ajustee.com/configurationKeys?path=mypath/")]
-        [InlineData("https://api.ajustee.com", "mypath/subpath", "https://api.ajustee.com/configurationKeys?path=mypath/subpath")]
-        public void GetConfigurationsUri(string apiUrl, string keyPath, string expectedUrl)
-        {
-            var _actualUri = Helper.GetConfigurationKeysUrl(new Uri(apiUrl), keyPath);
-            Assert.True(_actualUri == new Uri(expectedUrl));
-        }
 
         [Fact]
         public void GetConfigurations()

@@ -133,9 +133,9 @@ namespace Ajustee
             return _merged;
         }
 
-        public static void ValidateResponseStatus(int? statusCode, AjusteeConnectionSettings settings, Exception innerException)
+        public static void ValidateResponseStatus(int statusCode, AjusteeConnectionSettings settings, Exception innerException)
         {
-            switch (statusCode ?? 500)
+            switch (statusCode)
             {
                 case 400: // Bad Request
                     throw Error.InvalidRequest();

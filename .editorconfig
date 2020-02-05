@@ -2,3 +2,4 @@
 
 # IDE0069: Disposable fields should be disposed
 dotnet_diagnostic.IDE0069.severity = silent
+end_of_line = crlf

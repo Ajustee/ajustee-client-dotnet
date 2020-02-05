@@ -57,9 +57,10 @@ namespace Ajustee
         }
 
         [Theory]
-        [InlineData("namespace1/key1", true, false, "1", AjusteeErrorCode.NotValid)]
-        [InlineData("namespace1/key1", false, true, "1", AjusteeErrorCode.NotValid)]
-        [InlineData(null, false, false, "1", AjusteeErrorCode.NotValid)]
+        [InlineData("namespace1/key1", true, false, "1", AjusteeErrorCode.Invalid)]
+        [InlineData("namespace1/key1", false, true, "1", AjusteeErrorCode.Forbidden)]
+        [InlineData(null, false, false, "1", AjusteeErrorCode.Invalid)]
+        [InlineData("invalid_key_path", false, false, "1", AjusteeErrorCode.NotFound)]
         public void InvalidUpdateConfiguration(string path, bool skipApiUrl, bool skipAppId, string value, AjusteeErrorCode expectedError)
         {
             using var _client = CreateClient(skipAppId: skipAppId, skipApiUrl: skipApiUrl);
@@ -83,6 +84,25 @@ namespace Ajustee
             await _client.UpdateAsync(path, value);
             var _configKey = (await _client.GetConfigurationsAsync(path)).FirstOrDefault();
             Assert.True(object.Equals(_configKey.Value, value));
+        }
+
+        [Theory]
+        [InlineData("namespace1/key1", true, false, "1", AjusteeErrorCode.Invalid)]
+        [InlineData("namespace1/key1", false, true, "1", AjusteeErrorCode.Forbidden)]
+        [InlineData(null, false, false, "1", AjusteeErrorCode.Invalid)]
+        [InlineData("invalid_key_path", false, false, "1", AjusteeErrorCode.NotFound)]
+        public async Task InvalidUpdateConfigurationAsync(string path, bool skipApiUrl, bool skipAppId, string value, AjusteeErrorCode expectedError)
+        {
+            using var _client = CreateClient(skipAppId: skipAppId, skipApiUrl: skipApiUrl);
+            try
+            {
+                await _client.UpdateAsync(path, value);
+                Assert.True(false, "Expecting ajustee exception");
+            }
+            catch (AjusteeException _ex)
+            {
+                Assert.True(expectedError == _ex.ErrorCode);
+            }
         }
 #endif
 
