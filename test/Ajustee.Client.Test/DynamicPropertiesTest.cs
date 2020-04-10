@@ -12,10 +12,10 @@ namespace Ajustee
 {
     public class DynamicPropertiesTest
     {
-        [Fact]
-        public void ReflectProperties()
-        {
-            var _properties = Helper.ReflectProperties(Tuple.Create("key_path", ConfigKeyType.DateTime, DateTime.Today));
-        }
+        //[Fact]
+        //public void ReflectProperties()
+        //{
+        //    var _properties = Helper.ReflectProperties(Tuple.Create("key_path", ConfigKeyType.DateTime, DateTime.Today));
+        //}
     }
 }
