@@ -25,6 +25,7 @@ namespace Ajustee
 
         #region Public fields region
 
+        public const string DefaultApiUrl = "https://api.ajustee.com/";
         public const string HelpUrl = "https://help.ajustee.com/article/15-retrieving-configuration-in-net";
         public const string AppIdName = "x-api-key";
         public const string KeyPathName = "x-key-path";
