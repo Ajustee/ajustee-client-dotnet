@@ -24,6 +24,7 @@ namespace Ajustee
 
         private const int m_RECEIVE_STATE_NONE = 0;
         private const int m_RECEIVE_STATE_ACTIVE = 1;
+        private const int m_SOCKET_CLOSE_CODE_NORMAL = 1000; // Successful operation / regular socket shutdown.
 
         private readonly SemaphoreSlim m_SyncRoot = new SemaphoreSlim(1, 1);
         private CancellationTokenSource m_CancellationTokenSource = new CancellationTokenSource();
@@ -127,7 +128,8 @@ namespace Ajustee
                         Debug.WriteLine($"Disconnected ({_ex.ErrorCode})");
                         _reconnect = _ex.Reconnect && Settings.ReconnectSubscriptions;
 
-                        if (!_reconnect) throw;
+                        if (_ex.ErrorCode == m_SOCKET_CLOSE_CODE_NORMAL && !HasAnySubscriptions())
+                            _reconnect = false;
                     }
                     catch (Exception _ex)
                     {
@@ -136,6 +138,13 @@ namespace Ajustee
                     }
                 }
                 while (_reconnect && !_cancellationToken.IsCancellationRequested);
+
+                // Resets receive state.
+                Interlocked.Exchange(ref m_ReceiveState, m_RECEIVE_STATE_NONE);
+
+                // Give to reconnect next time.
+                m_Initialized = false;
+
             }, _cancellationToken);
         }
 
@@ -144,7 +153,7 @@ namespace Ajustee
             if (m_Subscribed == null)
                 m_Subscribed = new List<SubscribedItem>();
             m_Subscribed.Add(new SubscribedItem { Path = path, Properties = properties, Confirmed = false });
-            return m_Subscribed.Count;
+            return m_Subscribed.Count - 1;
         }
 
         private void ConfirmSubscribed(string path)
@@ -171,6 +180,12 @@ namespace Ajustee
         {
             if (m_Subscribed == null) return;
             m_Subscribed.RemoveAt(index);
+        }
+
+        private bool HasAnySubscriptions()
+        {
+            if (m_Subscribed == null) return false;
+            return m_Subscribed.Count != 0;
         }
 
         public void SubscribeInternal(string path, IDictionary<string, string> properties, CancellationToken cancellationToken)
