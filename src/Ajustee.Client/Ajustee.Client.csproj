@@ -28,7 +28,7 @@
     <!-- SJSON means System JSON -->
     <PackageReference Condition="'$(JsonMode)' == 'SJSON' AND '$(TargetFramework)' != 'netcoreapp3.0'" Include="System.Text.Json" Version="4.6.0" />
     <!-- NJSON means Newtonsoft JSON -->
-    <PackageReference Condition="'$(JsonMode)' == 'NJSON'" Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Condition="'$(JsonMode)' == 'NJSON'" Include="Newtonsoft.Json" Version="13.0.1" />
     <!--WebSocket for netstandard1.3 -->
     <PackageReference Condition="'$(TargetFramework)' == 'netstandard1.3'" Include="System.Net.WebSockets.Client" Version="4.3.2" />
   </ItemGroup>
